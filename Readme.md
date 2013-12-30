@@ -47,7 +47,6 @@ With the server running on port 8080, open
 in a web browser. From there you can explore the exposed sample resources:
 
 ![client-server](http://decatur.de/nucompres/html-chart.png)
-<img src="http://decatur.de/nucompres/html-chart.png" alt="client-server" style="width: 200px;"/>
 
 # Excel Client
 
