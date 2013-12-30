@@ -4,9 +4,11 @@ NuCompRes (Numerical Computational Resources) is a lightweight component to expo
 NuCompRes readily turns your MATLAB investment into a server, enabling clients to integrate using the REST
 architectural style.
 
+![client-server](http://decatur.de/nucompres/client-server.png)
+
 # Target
 
-For experienced MATLAB modelers who want to integrate their solution without having to learn about IT middleware.
+Experienced MATLAB modelers who want to integrate their solution without having to learn about IT middleware.
 
 # Version
 This is a very early one, say *Version 0.1*.
@@ -38,15 +40,19 @@ Here, 8080 is the port the server will listen on.
 
 # Web Clients
 
-Now open
+With the server running on port 8080, open
 
     http://localhost:8080/docs/index.html
 
-in a web browser. From there you can explore the exposed sample resources.
+in a web browser. From there you can explore the exposed sample resources:
+
+![client-server](http://decatur.de/nucompres/html-chart.png)
 
 # Excel Client
 
 There is an Excel Client interacting with some of the resources.
+
+![client-server](http://decatur.de/nucompres/sheet-chart.png)
 
 # MATLAB Client
 You can communicate with a remote server from inside MATLAB.
