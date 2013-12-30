@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>NuCompRes Chart Curves</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <style>
+        fieldset { margin:1em; padding:1ex; }
+        textarea { height:10ex; width:70ex; }
+    </style>
+    <script src="https://www.google.com/jsapi"></script>
+    <script src="MultiPart_parse.js"></script>
+    
+    <script>
+
+if ( !window.FormData ) alert('Your browser does not support FormData. Most likely it is outdated.');
+    
+function submitRequest() {
+    var formData = new FormData();
+    var fields = ['expression'];
+    var i, id;
+    
+    for (i=0; i<fields.length; i++) {
+        id = fields[i];
+        formData.append(id, document.getElementById(id).value);
+    }
+        
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+        if ( xhr.status != 200 ) {
+            alert(xhr.responseText);
+            return;
+        }
+        var parts = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
+        plot(parts.result);
+    };
+
+    xhr.open('POST', '/eval');
+    xhr.send(formData);
+}
+
+function plot(csv) {
+    if ( typeof csv !== 'string' ) {
+        alert('Expected csv-format, found ' + csv);
+        return;
+    }
+
+    // See https://developers.google.com/chart/interactive/docs/gallery/linechart?hl=de#Example
+
+    var array = [['x', 'sin', 'cos']];
+    
+    // csv has the form
+    // 1, 2
+    // 3, 4
+    // 5, 6
+    // Convert this to JSON and parse.
+    var values = JSON.parse('[[' + csv.replace(/\n/g, '],[') + ']]');
+    for (var i=0; i<values.length; i++) {
+        array.push([values[i][0], values[i][1], values[i][2]]);
+    }
+  
+    var data = google.visualization.arrayToDataTable(array);
+
+    var options = {
+      title: document.getElementById("expression").value
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+    chart.draw(data, options);
+
+}
+
+google.load('visualization', '1', {packages:['corechart'], language: 'en'});
+
+    </script>
+  </head>
+  <body>
+    <h1>NuCompRes Chart Curves</h1>
+    <fieldset>
+        <legend>Evaluate MATLAB Expressions</legend>
+        <textarea id="expression">[0:0.3:10; sin(0:0.3:10); cos(0:0.3:10)]'</textarea>
+        <button onclick="submitRequest()">Eval</button>
+    </fieldset>
+    
+    <div id="chart_div" style="margin-left:-3em;width: 500px; height: 300px;"></div>
+  </body>
+</html>
