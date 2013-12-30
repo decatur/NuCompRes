@@ -1,12 +1,15 @@
 # Overview
 
-NuCompRes is a lightweight component to expose computational MATLAB® resources over HTTP.
+NuCompRes (Numerical Computational Resources) is a lightweight component to expose computational MATLAB® resources over HTTP.
 NuCompRes readily turns your MATLAB investment into a server, enabling clients to integrate using the REST
 architectural style.
 
 # Target
 
 For experienced MATLAB modelers who want to integrate their solution without having to learn about IT middleware.
+
+# Version
+This is a very early one, say *Version 0.1*.
 
 # Features
 
@@ -33,18 +36,30 @@ Inside the MATLAB IDE
     
 Here, 8080 is the port the server will listen on.
 
-# Example Web Form Client 
+# Web Clients
 
-Now open a web browser and issue
+Now open
 
-    http://localhost:8080/docs/myresources.html
-    
-This will load the sample web forms, through which you can easily access all provided sample resources.
-Note that the web forms do not employ any scripting, showing how easy and plattform-agnostic the resources can be accessed.
+    http://localhost:8080/docs/index.html
 
-# Example Excel Client
+in a web browser. From there you can explore the exposed sample resources.
 
-TODO: Provide and document the client
+# Excel Client
+
+There is an Excel Client interacting with some of the resources.
+
+# MATLAB Client
+You can communicate with a remote server from inside MATLAB.
+
+**Warning**: If you do this inside a session which is running the server, your session will freeze!
+
+Example
+<pre>
+>> urlread('http://e212203:8080/eval', 'POST', {'expression' '1+1'})
+ans =
+result=2
+</pre> 
+
 
 # Curl Client
 POST the expression `1+1` to the `eval` resource with a content type of multipart/form-data:
@@ -116,11 +131,13 @@ does the same thing as the previous example, but additionally passes _bar_ as th
 To build meaningful routing tables you should eventually become familiar with the [REST](http://en.wikipedia.org/wiki/Representational_state_transfer) architectural style. 
 
 # Content Negotiation
-If you send a request body to the server, you have to include a content type header. Many clients will do this for you.
+If you send a request to the server, you have to include a content type header. Many clients will do this for you.
 Supported types are
 * text/plain
 * multipart/form-data
 * application/x-www-form-urlencoded
+
+TODO: Describe the reponse content type.
 
 If the content type is text/plain or is missing, the server will pass the raw (unparsed) body to the resource as the *request.body* field.
 
@@ -130,8 +147,7 @@ If you change and compile the Java code, please restart the MATLAB session to fl
 
 # Into the Wild
 NuComRes does not play in the league of load balancing and security (authentication).
-Either put in front a reverse proxy such as [Nginx](http://wiki.nginx.org/Main)
-which can handle these issues. Or look for a different solution alltogether, for example MATLAB Builder NE/JA.
+A reverse proxy such as [Nginx](http://wiki.nginx.org/Main) can handle these issues.
 
 **Do not**, ever, place a NuComRes server into an untrusted zone.
 
@@ -150,19 +166,14 @@ Upon successful compilation, start the server from the command line with
 
     myServer 8080
 
-# Consuming resources with MATLAB
-You can communicate with a remote server from inside MATLAB, for example
-
-    urlread('http://myremotehost:8080/eval', 'POST', {'expression' '1+1'});
-    
-**Warning**: If you do this inside a session which is running the server, your session will freeze!
-
 # Running on Octave
 No. Octave, sadly, simple-mindedly, does not support [nested function](http://wiki.octave.org/FAQ#Nested_Functions) the MATLAB way.
+Other compatibility bugs are regular expressions and error handling.
 
 # References
 * [path-management-in-deployed-applications]
 * [matlabcontrol]
+* [Calling Matlab from Java](http://www.cs.virginia.edu/~whitehouse/matlab/JavaMatlab.html)
 
   [path-management-in-deployed-applications]: http://blogs.mathworks.com/loren/2008/08/11/path-management-in-deployed-applications (Path Management in Deployed Applications)
   [matlabcontrol]: https://code.google.com/p/matlabcontrol/ (A Java API to interact with MATLAB)
@@ -171,4 +182,7 @@ No. Octave, sadly, simple-mindedly, does not support [nested function](http://wi
 MATLAB® and MATLAB Compiler™ are trademarks or registered trademarks of The MathWorks, Inc.
 
 The American option pricer is taken from [NineWays to Implement the Binomial Method for Option Valuation in MATLAB](http://epubs.siam.org/doi/pdf/10.1137/S0036144501393266)
+
+# License
+NuCompRes is licensed under the MIT license.
 

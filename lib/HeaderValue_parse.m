@@ -19,9 +19,9 @@ for i=2:length(parts)
   paramValue = strtrim(tokens{1}{2});
   % Strip quotes. TODO: Strip only matching quotes!
   paramValue = strrep(paramValue, '"', '');
-  if ~isnan(str2double(paramValue))
-    paramValue = str2double(paramValue);
-  end
+  %if ~isnan(str2double(paramValue))
+  %  paramValue = str2double(paramValue);
+  %end
   params.(key) = paramValue;
 end
 

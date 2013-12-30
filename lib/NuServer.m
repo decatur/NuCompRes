@@ -85,18 +85,24 @@ function server = NuServer(port, routingTable)
           error('http400:Bad_Request', '%s', err.message);
         end
         
+        if isstruct(response) && isfield(response, 'contentType')
+          responseContentType = response.contentType;
+        else
+          responseContentType = contentType;
+        end
+        
         if ~isstruct(response)
           response = num2str( response );
           responseContentType = 'text/plain';
-        elseif strcmp(contentType, 'application/x-www-form-urlencoded')
+        elseif strcmp(responseContentType, 'application/x-www-form-urlencoded')
           response = XWWWForm_stringify( response );
-          responseContentType = 'application/x-www-form-urlencoded';
-        elseif strcmp(contentType, 'multipart/form-data')
-          response = MultiPart_stringify( response );
-          responseContentType = 'multipart/form-data';
-        elseif strcmp(contentType, 'text/plain')
-          response = TextPlain_stringify( response );
-          responseContentType = 'text/plain';
+        elseif strcmp(responseContentType, 'multipart/form-data')
+          [response, boundary] = MultiPart_stringify( response );
+          responseContentType = sprintf('%s; boundary=%s', responseContentType, boundary);
+        elseif isfield(response, 'body')
+          response = response.body;
+        else
+          error('http400:Bad_Request', 'Invalid Content-Type: %s', contentType);
         end
         
         status = '200 OK';

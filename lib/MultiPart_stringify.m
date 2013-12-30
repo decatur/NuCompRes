@@ -13,7 +13,12 @@ fields = fieldnames(parts_struct);
 for i=1:length(fields)
   value = parts_struct.(fields{i});
   if isnumeric(value)
-    value = mat2str(value);
+    % Format 2-D matrices as csv.
+    assert( length(size(value)) == 2 );
+    formatStr = repmat('%g,\t', 1, size(value, 2));
+    formatStr = sprintf('%s\n', formatStr(1:end-3));
+    value = sprintf(formatStr, value');
+    value = value(1:end-1);
   end
   
   %if isstruct(value)

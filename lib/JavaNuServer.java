@@ -178,7 +178,7 @@ public class JavaNuServer implements HttpHandler, Runnable {
                     status + '\n' + responseBody);
             }
             
-            ex.getResponseHeaders().add("Content-Type", "text/plain");
+            ex.getResponseHeaders().add("Content-Type", this.responseContentType);
             ex.getResponseHeaders().add("Cache-Control", "no-cache");
             ex.getResponseHeaders().add("Pragma", "no-cache");
             ex.getResponseHeaders().add("Expires", "-1");
@@ -207,6 +207,7 @@ public class JavaNuServer implements HttpHandler, Runnable {
         // Called from matlab main thread.
         System.out.println("MatlabFevalCommand now running ...");
         try {
+            // See methodsview('com.mathworks.jmi.Matlab')
             Matlab.mtFevalConsoleOutput("NuServerJavaProxy", new Object[]{
                 this.method, this.uri, this.requestBody, this.contentType}, 0);
         } catch (Exception e) {
