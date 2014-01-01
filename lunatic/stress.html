@@ -1,0 +1,144 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Be able to use document.querySelectorAll -->
+        <meta http-equiv="X-UA-Compatible" content="IE=100" >
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        
+        <style>
+        
+        body {
+            margin: 2em;
+        }
+        
+        h1 {
+            color: #f90;
+        }
+        
+        h2 {
+            color: blue;
+        }
+        
+        textarea {
+            display:block; width:90%; height: 60ex;
+        }
+        
+        input {
+            width:50ex;
+        }
+
+        label {
+            display:block;
+        }
+        
+        label span {
+            display:inline-block;
+            width: 7em;
+        }
+        </style>
+                
+        <script>
+        
+// Console-polyfill. MIT license.
+// https://github.com/paulmillr/console-polyfill
+// Make it safe to do console.log() always.
+(function (con) {
+  'use strict';
+  var prop, method;
+  var empty = {};
+  var dummy = function() {};
+  var properties = 'memory'.split(',');
+  var methods = ('assert,count,debug,dir,dirxml,error,exception,group,' +
+     'groupCollapsed,groupEnd,info,log,markTimeline,profile,profileEnd,' +
+     'time,timeEnd,trace,warn').split(',');
+  while (prop = properties.pop()) con[prop] = con[prop] || empty;
+  while (method = methods.pop()) con[method] = con[method] || dummy;
+})(window.console = window.console || {});
+
+
+window.onload = function() {
+    clearLog();
+};
+
+function log(msg) {
+    var logElement = document.getElementById('log');
+    logElement.value += msg + '\n';
+}
+
+function clearLog(msg) {
+    document.getElementById('log').value = '';
+}
+
+function makeRequest() {
+    clearLog();
+
+    var method = document.getElementById('method').value;
+    var requestCount = document.getElementById('requestCount').value;
+    var bodyLength = document.getElementById('bodyLength').value;
+    var requestBody;
+    
+    if ( method == 'GET' ) {
+        requestBody = '';
+    } else if ( bodyLength ) {
+        requestBody = (new Array(Math.round(bodyLength*1024/10))).join('0123456789');
+    } else {
+        requestBody = document.getElementById('requestBody').value;
+    }
+    
+    var url = document.getElementById('url').value;
+    
+    for (var i=0; i<requestCount; i++) {
+        sendRequest(method, url, requestBody);
+    }
+}
+
+function sendRequest(method, url, body) {
+    var xhr = new ActiveXObject('Msxml2.XMLHTTP');
+    xhr.open(method, url);
+    xhr.send(method=='GET'?null:body);
+    
+    var startDate = new Date();
+    
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4) {
+            var now = new Date();
+            var elapsedTime = ((+now - startDate)/1000);
+            log('HTTP ' + xhr.status + ' ' + xhr.statusText + ' ' + url + '\n' +
+                'Total Response Time: ' + elapsedTime + '\n' +
+                xhr.getAllResponseHeaders() + xhr.responseText);
+        }
+    };
+    
+}
+
+
+        </script>
+        
+    </head>
+    <body>
+
+    <h1>ETG Matlab Server V0.1</h1>
+    
+    <div>
+        <label>method <input id="method" value="POST"/></label>
+    </div>
+    <div>
+        <label>url <input id="url" value="http://localhost:8205/eval/"/></label>
+    </div>
+    <div>
+        <label>bodyLength[kB] <input id="bodyLength" value="0"/></label>
+    </div>
+    requestBody
+    <textarea id="requestBody">1+2</textarea>
+    
+    <div>
+        <label>requestCount <input id="requestCount" value="2"/></label>
+    </div>
+    
+    <button onclick="makeRequest()">Anfrage Senden</button>
+    
+    <textarea id="log">
+    </textarea>
+    
+    </body>
+</html>

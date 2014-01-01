@@ -27,6 +27,10 @@ This is a very early one, say *Version 0.1*.
 
 # Usage
 
+Start the sample server on port 8080.
+
+## MATLAB
+
 Inside the MATLAB IDE
 
     cd <PATH_TO_NuCompRes>
@@ -35,8 +39,20 @@ Inside the MATLAB IDE
     javaaddpath('lib');
     addpath('examples');
     server = myServer(8080);
-    
-Here, 8080 is the port the server will listen on.
+    server.start();
+
+## Octave
+
+Inside the Octave shell
+
+    addpath('lib;lib/octave');
+    addpath('resources');
+    addpath('examples');
+    server = myServer(8080);
+    server.start();
+
+Or from the command line
+    octave.exe lib/octave/script.m 8080
 
 # Web Clients
 
@@ -88,7 +104,7 @@ Inside a MATLAB session, you may stop
 
 and restart
 
-    server.listen()
+    server.start()
 
 a server at any time. To stop a server in a standalone application, issue a `POST /admin/stop`. This will also terminate the application.
 
@@ -161,7 +177,7 @@ A reverse proxy such as [Nginx](http://wiki.nginx.org/Main) can handle these iss
 NuCompRes is completely written in MATLAB code. Only a very small, single class Java-Proxy must be incorporated.
 No external libraries are required.
 
-# Compiling a Standalone Application
+# Compiling a MATLAB Standalone Application
 
 For this you need a license for the MATLAB Compiler.
 
@@ -171,10 +187,6 @@ See [path-management-in-deployed-applications] why the -a option is needed.
 Upon successful compilation, start the server from the command line with 
 
     myServer 8080
-
-# Running on Octave
-No. Octave, sadly, simple-mindedly, does not support [nested function](http://wiki.octave.org/FAQ#Nested_Functions) the MATLAB way.
-Other compatibility bugs are regular expressions and error handling.
 
 # References
 * [path-management-in-deployed-applications]

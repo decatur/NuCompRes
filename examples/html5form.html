@@ -57,6 +57,10 @@ function submitPricing() {
         
     var xhr = new XMLHttpRequest();
     xhr.onload = function() {
+        if ( xhr.status != 200 ) {
+            alert(xhr.responseText);
+            return;
+        }
         var parts = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
         document.getElementById('fairPrice').innerHTML = parts.fairValue;
         
@@ -87,8 +91,8 @@ function submitPricing() {
         <button onclick="submitPricing()">Price</button>
         
         <p>
-        The Fair Price is <span id="fairPrice" style="font-weight:bold">...</span>
-    </p>
+            The Fair Price is <span id="fairPrice" style="font-weight:bold">...</span>
+        </p>
     </fieldset>
     
     </body>

@@ -1,2 +1,4 @@
-* Review usage of regexp. Always also return a match to check against to work around Octave bug.
-* Make Octave work: Refactor nested functions -> class objects (urgh)
+* Describe how to start octave server: 
+octave --path lib;lib/octave;resources;examples myServer 8080
+
+* Add link on http://www.mathworks.com/matlabcentral/linkexchange

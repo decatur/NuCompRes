@@ -6,7 +6,8 @@ function methods = american_option_pricer()
 %   pricer.getConfig()
 %   pricer.exec(struct('S', 9, 'E', 10, 'T', 1, 'r', 0.06, 'sigma', 0.3))
 
-configFile = 'resources/aop-config.mat';
+% Default number of time-steps.
+M = 1000;
 
 function [ W ] = american_option_price( S, E, T, r, sigma )
 %AMERICAN_OPTION_PRICE AMERICAN Binomial method for an American put
@@ -23,9 +24,6 @@ function [ W ] = american_option_price( S, E, T, r, sigma )
 %     Valuation in MATLAB', SIAM REVIEW ,Vol. 44, No. 4, pp. 661–677,
 %     http://epubs.siam.org/doi/pdf/10.1137/S0036144501393266
 %
-
-config = load(configFile);
-M = config.M;
 
 dt = T/M;A = 0.5*(exp(-r*dt)+exp((r+sigma^2)*dt));
 u = A + sqrt(A^2-1);d = 1/u;p = (exp(r*dt)-d)/(u-d);
@@ -56,16 +54,15 @@ function response = execResource(req)
 end
 
 function response = setConfig(req)
-  M = req.M;
   % Validate
-  assert( isnumeric(M) && round(M) == M && M > 0, ...
-    'number of time-steps must be positive interger, found %s', num2str(M) );
-  save(configFile, 'M')
+  assert( isnumeric(req.M) && round(req.M) == req.M && req.M > 0, ...
+    'number of time-steps must be positive interger, found %s', num2str(req.M) );
+  M = req.M;
   response = 'Configuration changed';
 end
 
 function config_struct = getConfig(~)
-    config_struct = load(configFile);
+  config_struct.M = M;
 end
 
 methods = struct();
@@ -76,6 +73,4 @@ methods.getConfig = @getConfig;
 methods.american_option_price = @american_option_price;
 
 end
-
-
 

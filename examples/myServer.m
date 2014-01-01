@@ -13,13 +13,16 @@ routingTable{end+1} = {'POST /pricer/options/american', aop.exec};
 routingTable{end+1} = {'PUT /pricer/options/american/config', aop.setConfig};
 % Alias to the more REST-ish PUT, but POST is supported by HTML forms.
 routingTable{end+1} = {'POST /pricer/options/american/config', aop.setConfig};
-% Dito for GET, but this is realy bad style.
+% Dito for GET, but it's realy bad style.
 routingTable{end+1} = {'GET /pricer/options/american/config', aop.getConfig};
 routingTable{end+1} = {'POST /admin/stop', @StopResource};
 
-server = NuServer(port, routingTable);
-server.listen();
+if exist('octave_config_info')
+    server = NuServerOctave(port, routingTable);
+else
+    server = NuServer(port, routingTable);
+end
 
-fprintf('Visit http://localhost:%d/docs/myresources.html\n', port);
+fprintf(1, 'Visit http://localhost:%d/docs/index.html\n', port);
 
 end

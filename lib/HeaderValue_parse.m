@@ -13,7 +13,11 @@ value = strtrim(parts{1});
 params = struct();
       
 for i=2:length(parts)
-  [~, tokens] = regexp(parts{i}, '(\w+)=(.*)', 'match', 'tokens');
+  [match, tokens] = regexp(parts{i}, '(\w+)=(.*)', 'match', 'tokens');
+  
+  if isempty(match) 
+    continue;
+  end
 
   key = strtrim(tokens{1}{1});
   paramValue = strtrim(tokens{1}{2});

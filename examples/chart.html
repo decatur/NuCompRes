@@ -13,7 +13,8 @@
     
     <script>
 
-if ( !window.FormData ) alert('Your browser does not support FormData. Most likely it is outdated.');
+// See https://developer.mozilla.org/en-US/docs/Web/API/FormData
+if ( !window.FormData) alert('Your browser, most likely being pretty outdated, does not support FormData.');
     
 function submitRequest() {
     var formData = new FormData();
@@ -70,7 +71,13 @@ function plot(csv) {
 
 }
 
-google.load('visualization', '1', {packages:['corechart'], language: 'en'});
+// Note: Loading packages in handlers my fail in IE10, so we load it here.
+if ( window.google ) {
+    google.load('visualization', '1', {packages:['corechart'], language: 'en'});
+} else {
+    // TODO: Is there an offline version?
+    alert('Could not load google package. Are you offline?');
+}
 
     </script>
   </head>

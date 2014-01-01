@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>NuCompRes Basic Form Example</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=100" >
         <meta http-equiv="content-type" content="text/html; charset=utf-8">
         <style>
             
@@ -43,10 +43,7 @@
 
     <body>
 
-    <h1>NuCompRes Basic Form Example</h1>
-    <p>
-        Use old-style form submits, no scripting whatsoever.
-    <p>
+    <h1>NuCompRes Sample Computational Resources</h1>
 
     <form action="/eval" method="POST" enctype="multipart/form-data">
         <fieldset>
@@ -57,7 +54,7 @@
         </fieldset>
     </form>
 
-    <form action="/pricer/options/american" method="POST" enctype="multipart/form-data">
+    <form action="/pricer/options/american" method="POST" enctype="application/x-www-form-urlencoded">
          <fieldset>
             <legend>American Option Pricing</legend>
             <label>asset starting price S<input name="S" value="9"/></label>
@@ -69,7 +66,7 @@
         </fieldset>
     </form>
     
-    <form action="/pricer/options/american/config" method="POST" enctype="multipart/form-data">
+    <form action="/pricer/options/american/config" method="POST" enctype="application/x-www-form-urlencoded">
          <fieldset>
             <legend>American Option Pricing Configuration</legend>
             <p>
