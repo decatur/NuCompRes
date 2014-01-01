@@ -1,6 +1,8 @@
 # Overview
 
-NuCompRes (Numerical Computational Resources) is a lightweight component to expose computational MATLAB® resources over HTTP.
+NuCompRes (Numerical Computational Resources) is a lightweight component to expose
+computational MATLAB® or Octave resources over HTTP.
+
 NuCompRes readily turns your MATLAB investment into a server, enabling clients to integrate using the REST
 architectural style.
 
@@ -10,8 +12,16 @@ architectural style.
 
 Experienced MATLAB modelers who want to integrate their solution without having to learn about IT middleware.
 
-# Version
-This is a very early one, say *Version 0.1*.
+# Download
+
+Please use git to retrieve a copy of the development branch, or
+[download released archives](releases).
+
+## v0.2.0
+Supports Octave, not yet released.
+
+## v0.1.0
+Initial release.
 
 # Features
 
@@ -22,8 +32,12 @@ This is a very early one, say *Version 0.1*.
 
 # Requirements
 
+## MATLAB
 * Java Version 5 or higher. This implies MATLAB Releases 2006 and higher.
 * (Optional) MATLAB Compiler™ to build a Standalone Application
+
+## Octave
+* Sockets package from Octave Forge must be installed.
 
 # Usage
 
@@ -52,6 +66,7 @@ Inside the Octave shell
     server.start();
 
 Or from the command line
+
     octave.exe lib/octave/script.m 8080
 
 # Web Clients
@@ -187,6 +202,10 @@ See [path-management-in-deployed-applications] why the -a option is needed.
 Upon successful compilation, start the server from the command line with 
 
     myServer 8080
+	
+# Alternatives
+
+This is yet to come.
 
 # References
 * [path-management-in-deployed-applications]
