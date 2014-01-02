@@ -15,7 +15,7 @@ Experienced MATLAB modelers who want to integrate their solution without having 
 # Download
 
 Please use git to retrieve a copy of the development branch, or
-[download released archives](releases).
+[download released archives](../../releases).
 
 ## v0.2.0
 Supports Octave, not yet released.
