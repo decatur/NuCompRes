@@ -1,8 +1,12 @@
 # Overview
 
-NuCompRes (Numerical Computational Resources) is a lightweight component to expose computational MATLAB® resources over HTTP.
+NuCompRes (Numerical Computational Resources) is a lightweight component to expose
+computational MATLAB® or Octave resources over HTTP.
+
 NuCompRes readily turns your MATLAB investment into a server, enabling clients to integrate using the REST
 architectural style.
+
+![client-server](http://decatur.de/nucompres/client-server.png)
 
 # Target
 
@@ -13,8 +17,11 @@ Experienced MATLAB modelers who want to integrate their solution without having 
 Please use git to retrieve a copy of the development branch, or
 [download released archives](../../releases).
 
-# Version
-This is a very early one, say *Version 0.1*.
+## v0.2.0
+Supports Octave, not yet released.
+
+## v0.1.0
+Initial release.
 
 # Features
 
@@ -25,31 +32,58 @@ This is a very early one, say *Version 0.1*.
 
 # Requirements
 
+## MATLAB
 * Java Version 5 or higher. This implies MATLAB Releases 2006 and higher.
 * (Optional) MATLAB Compiler™ to build a Standalone Application
 
+## Octave
+* Sockets package from Octave Forge must be installed.
+
 # Usage
+
+Start the sample server on port 8080.
+
+## MATLAB
 
 Inside the MATLAB IDE
 
     cd <PATH_TO_NuCompRes>
-    addpath('lib;resources;support/json;examples');
+    addpath('resources');
+    addpath('lib');
     javaaddpath('lib');
-    server = startMyServer(8080);
-    
-Here, 8080 is the port the server will listen on.
+    addpath('examples');
+    server = myServer(8080);
+    server.start();
+
+## Octave
+
+Inside the Octave shell
+
+    addpath('lib;lib/octave');
+    addpath('resources');
+    addpath('examples');
+    server = myServer(8080);
+    server.start();
+
+Or from the command line
+
+    octave.exe lib/octave/script.m 8080
 
 # Web Clients
 
-Now open
+With the server running on port 8080, open
 
     http://localhost:8080/docs/index.html
 
-in a web browser. From there you can explore the exposed sample resources.
+in a web browser. From there you can explore the exposed sample resources:
+
+![client-server](http://decatur.de/nucompres/html-chart.png)
 
 # Excel Client
 
-TODO: Provide and document the client
+There is an Excel Client interacting with some of the resources.
+
+![client-server](http://decatur.de/nucompres/sheet-chart.png)
 
 # MATLAB Client
 You can communicate with a remote server from inside MATLAB.
@@ -85,7 +119,7 @@ Inside a MATLAB session, you may stop
 
 and restart
 
-    server.listen()
+    server.start()
 
 a server at any time. To stop a server in a standalone application, issue a `POST /admin/stop`. This will also terminate the application.
 
@@ -158,7 +192,7 @@ A reverse proxy such as [Nginx](http://wiki.nginx.org/Main) can handle these iss
 NuCompRes is completely written in MATLAB code. Only a very small, single class Java-Proxy must be incorporated.
 No external libraries are required.
 
-# Compiling a Standalone Application
+# Compiling a MATLAB Standalone Application
 
 For this you need a license for the MATLAB Compiler.
 
@@ -168,10 +202,10 @@ See [path-management-in-deployed-applications] why the -a option is needed.
 Upon successful compilation, start the server from the command line with 
 
     myServer 8080
+	
+# Alternatives
 
-# Running on Octave
-No. Octave, sadly, simple-mindedly, does not support [nested function](http://wiki.octave.org/FAQ#Nested_Functions) the MATLAB way.
-Other compatibility bugs are regular expressions and error handling.
+This is yet to come.
 
 # References
 * [path-management-in-deployed-applications]
@@ -188,4 +222,3 @@ The American option pricer is taken from [NineWays to Implement the Binomial Met
 
 # License
 NuCompRes is licensed under the MIT license.
-
