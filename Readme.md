@@ -6,7 +6,12 @@ architectural style.
 
 # Target
 
-For experienced MATLAB modelers who want to integrate their solution without having to learn about IT middleware.
+Experienced MATLAB modelers who want to integrate their solution without having to learn about IT middleware.
+
+# Download
+
+Please use git to retrieve a copy of the development branch, or
+[download released archives](../../releases).
 
 # Version
 This is a very early one, say *Version 0.1*.
