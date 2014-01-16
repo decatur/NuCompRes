@@ -31,7 +31,7 @@
         
         textarea {
             width:25em;
-            float:right;
+            height:7em;
         }
         
         button {
@@ -42,16 +42,17 @@
         <script src="MultiPart_parse.js"></script>
         <script>
 
-// See https://developer.mozilla.org/en-US/docs/Web/API/FormData
-if ( !window.FormData) alert('Your browser, most likely being pretty outdated, does not support FormData.');
 
-function submitPricing() {
+
+function submitMultiPart(method, url, requestFields, callback) {
+    if ( !window.FormData) alert('Your browser, most likely being pretty outdated, does not support FormData.');
+
+    // See https://developer.mozilla.org/en-US/docs/Web/API/FormData
     var formData = new FormData();
-    var fields = ['S', 'E', 'T', 'r', 'sigma'];
     var i, id;
     
-    for (i=0; i<fields.length; i++) {
-        id = fields[i];
+    for (i=0; i<requestFields.length; i++) {
+        id = requestFields[i];
         formData.append(id, document.getElementById(id).value);
     }
         
@@ -61,13 +62,46 @@ function submitPricing() {
             alert(xhr.responseText);
             return;
         }
-        var parts = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
-        document.getElementById('fairPrice').innerHTML = parts.fairValue;
-        
+        var ct = xhr.getResponseHeader('Content-Type');
+        if ( ct == "text/plain" ) {
+            callback(xhr.responseText);
+        } else if ( ct == "multipart/form-data") {
+            var responseFields = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
+            callback(responseFields);
+        } else if ( ct == 'application/json' ) {
+            callback(JSON.parse(xhr.responseText));
+        }
     };
 
-    xhr.open('POST', '/pricer/options/american');
+    xhr.open(method, url);
     xhr.send(formData);
+}
+
+function submitEval() {
+    submitMultiPart('POST', '/eval',
+        ['expression'],
+        function(responseFields) {
+            document.getElementById('ans').value = JSON.stringify(responseFields);
+        }
+    )
+}
+
+function submitPricing() {
+    submitMultiPart('POST', '/pricer/options/american',
+        ['S', 'E', 'T', 'r', 'sigma'],
+        function(responseFields) {
+            document.getElementById('fairPrice').innerHTML = responseFields.fairValue;
+        }
+    )
+}
+
+function submitStop() {
+    submitMultiPart('POST', '/admin/stop',
+        [],
+        function(responseFields) {
+            alert(JSON.stringify(responseFields));
+        }
+    )
 }
         </script>
             
@@ -80,6 +114,19 @@ function submitPricing() {
     <p>
         HTML5 Ajax style submits, no page transitions.
     <p>
+    
+    <fieldset>
+        <legend>Evaluate MATLAB Expressions</legend>
+        <p>
+            <label>Expression</br><textarea id="expression">a=1;
+b={1 2;3 4};
+res = struct();
+res.a=a;
+res.b=b;</textarea></label>
+            <textarea id="ans"></textarea>
+        </p>    
+        <button onclick="submitEval()">Eval</button>
+    </fieldset>
 
     <fieldset>
         <legend>American Option Pricing</legend>
@@ -93,6 +140,11 @@ function submitPricing() {
         <p>
             The Fair Price is <span id="fairPrice" style="font-weight:bold">...</span>
         </p>
+    </fieldset>
+    
+    <fieldset>
+        <legend>Stop Server</legend>
+        <button onclick="submitStop()">Stop Now</button>
     </fieldset>
     
     </body>

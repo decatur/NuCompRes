@@ -79,12 +79,12 @@ function response = RestRouter(routingTable, requestMethod, requestUrl, requestB
         if isstruct(handlerResponse) && isfield(handlerResponse, 'contentType')
           response.contentType = handlerResponse.contentType;
         else
-          response.contentType = 'multipart/form-data';
+          response.contentType = 'application/json'; %'multipart/form-data';
         end
         
-        if ~isstruct(handlerResponse)
-          response.body = num2str( handlerResponse );
-          response.contentType = 'text/plain';
+        if strcmp(response.contentType, 'application/json') || ~isstruct(handlerResponse)
+          response.body = JSON_stringify( handlerResponse, [], 4 );
+          response.contentType = 'application/json';
         elseif strcmp(response.contentType, 'application/x-www-form-urlencoded')
           response.body = querystring_stringify( handlerResponse );
         elseif strcmp(response.contentType, 'multipart/form-data')

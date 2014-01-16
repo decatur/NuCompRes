@@ -12,6 +12,7 @@ fields = fieldnames(parts_struct);
 
 for i=1:length(fields)
   value = parts_struct.(fields{i});
+
   if isnumeric(value)
     % Format 2-D matrices as csv.
     assert( length(size(value)) == 2 );
@@ -19,6 +20,19 @@ for i=1:length(fields)
     formatStr = sprintf('%s\n', formatStr(1:end-3));
     value = sprintf(formatStr, value');
     value = value(1:end-1);
+  elseif iscell(value)
+    buf = '';
+    newline = sprintf('');
+    for rIndex=1:size(value, 1)
+      buf = sprintf('%s%s', buf, newline);
+      newline = sprintf('\n');
+      sep = '';
+      for cIndex=1:size(value, 2)
+        buf = sprintf('%s%s%g', buf, sep, value{rIndex, cIndex});
+        sep = sprintf('\t');
+      end
+    end
+    value = buf;
   end
   
   %if isstruct(value)

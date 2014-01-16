@@ -6,8 +6,6 @@ function methods = american_option_pricer()
 %   pricer.getConfig()
 %   pricer.exec(struct('S', 9, 'E', 10, 'T', 1, 'r', 0.06, 'sigma', 0.3))
 
-configFile = 'resources/aop-config.mat';
-
 function [ W ] = american_option_price( S, E, T, r, sigma )
 %AMERICAN_OPTION_PRICE AMERICAN Binomial method for an American put
 % S: asset starting price
@@ -24,7 +22,7 @@ function [ W ] = american_option_price( S, E, T, r, sigma )
 %     http://epubs.siam.org/doi/pdf/10.1137/S0036144501393266
 %
 
-config = load(configFile);
+config = load('resources/aop-config.mat');
 M = config.M;
 
 dt = T/M;A = 0.5*(exp(-r*dt)+exp((r+sigma^2)*dt));
@@ -60,12 +58,12 @@ function response = setConfig(req)
   % Validate
   assert( isnumeric(M) && round(M) == M && M > 0, ...
     'number of time-steps must be positive interger, found %s', num2str(M) );
-  save(configFile, 'M')
+  save('resources/aop-config.mat', 'M', '-mat');
   response = 'Configuration changed';
 end
 
 function config_struct = getConfig(~)
-    config_struct = load(configFile);
+    config_struct = load('resources/aop-config.mat');
 end
 
 methods = struct();

@@ -1,4 +1,4 @@
-  function response = RestRouterSansException(routingTable, requestMethod, requestUrl, requestBody, contentType)
+function response = RestRouterSansException(routingTable, requestMethod, requestUrl, requestBody, contentType)
     
     try
       response = RestRouter(routingTable, requestMethod, requestUrl, ...

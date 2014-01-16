@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <title>NuCompRes Chart Curves</title>
@@ -6,9 +6,29 @@
     
     <style>
         fieldset { margin:1em; padding:1ex; }
-        textarea { height:10ex; width:70ex; }
+        textarea { height:20ex; width:100ex; }
+        body {
+            font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+
+        .x.axis path {
+        }
+
+        .line {
+          fill: none;
+          stroke: steelblue;
+          stroke-width: 1.5px;
+        }
+
     </style>
-    <script src="https://www.google.com/jsapi"></script>
+    <script src="http://d3js.org/d3.v3.js"></script>
     <script src="MultiPart_parse.js"></script>
     
     <script>
@@ -32,63 +52,141 @@ function submitRequest() {
             alert(xhr.responseText);
             return;
         }
-        var parts = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
-        plot(parts.result);
+        var resonse = JSON.parse(xhr.responseText); //MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
+        plot(resonse);
     };
 
     xhr.open('POST', '/eval');
     xhr.send(formData);
 }
 
-function plot(csv) {
+var svg;
+
+function plot(res) {
+    /*csv = res.csv;
     if ( typeof csv !== 'string' ) {
         alert('Expected csv-format, found ' + csv);
         return;
-    }
+    }*/
 
-    // See https://developers.google.com/chart/interactive/docs/gallery/linechart?hl=de#Example
-
-    var array = [['x', 'sin', 'cos']];
+    // As of beginning 2014, D3 seems to be the most promising graphical library.
+    // Steep learning curve, but powerful.
+    // TODO: Use http://code.shutterstock.com/rickshaw/examples/y_axis.html
     
-    // csv has the form
-    // 1, 2
-    // 3, 4
-    // 5, 6
-    // Convert this to JSON and parse.
-    var values = JSON.parse('[[' + csv.replace(/\n/g, '],[') + ']]');
-    for (var i=0; i<values.length; i++) {
-        array.push([values[i][0], values[i][1], values[i][2]]);
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+        width = 500 - margin.left - margin.right,
+        height = 500*2/(1+Math.sqrt(5)) - margin.top - margin.bottom;
+
+    var x = d3.scale.linear()
+        .range([0, width]);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+    
+    // svg is the D3-selection pointing to the g-child of the #canvas element,
+    // see https://github.com/mbostock/d3/wiki/Selections
+    // We remove the complete graph.
+    if ( svg ) svg.remove();
+
+    svg = d3.select("#canvas")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var data = res.csv;//d3.csv.parseRows(csv);
+    var colCount = data[0].length;
+    
+    var minX = data[0][0];
+    var maxX = data[data.length-1][0];
+    var minY = Math.min();
+    var maxY = Math.max();
+    
+    for (var i=0; i<data.length; i++) {
+        for (var j=1; j<colCount; j++) {
+            minY = Math.min(minY, data[i][j]);
+            maxY = Math.max(maxY, data[i][j]);
+        }
     }
-  
-    var data = google.visualization.arrayToDataTable(array);
 
-    var options = {
-      title: document.getElementById("expression").value
-    };
+    x.domain([0, maxX]);
+    y.domain([minY, maxY]);
 
-    var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-    chart.draw(data, options);
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis)
+        .append("text")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("x");;
 
-}
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .append("text")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("y");
 
-// Note: Loading packages in handlers my fail in IE10, so we load it here.
-if ( window.google ) {
-    google.load('visualization', '1', {packages:['corechart'], language: 'en'});
-} else {
-    // TODO: Is there an offline version?
-    alert('Could not load google package. Are you offline?');
+    var xData = function(d) { return x(d[0]); }
+    var cat10 = d3.scale.category10();
+            
+    for (var j=1; j<colCount; j++) {
+        // IIFE to bind loop variable.
+        var yData = (function(col) {
+            return function(d) { return y(d[col]); }
+        })(j);
+    
+        var line = d3.svg.line()
+            .x(xData)
+            .y(yData);
+        
+        svg.append("path")
+            .datum(data)
+            .attr("class", "line")
+            .style("stroke", cat10((j-1)%10))
+            .attr("d", line);
+    }
+
 }
 
     </script>
   </head>
   <body>
     <h1>NuCompRes Chart Curves</h1>
+    <p>
+        The expression must yield a matrix with 3 columns. Column 2 and 3 are plotted over column 1.
+        <a href="https://github.com/mbostock/d3">D3.js</a> renders the graph.
+    </p>
+    
     <fieldset>
         <legend>Evaluate MATLAB Expressions</legend>
-        <textarea id="expression">[0:0.3:10; sin(0:0.3:10); cos(0:0.3:10)]'</textarea>
+        
+        <textarea id="expression">Fs = 1000;
+T = 1/Fs;
+L = 1000;
+t = (0:L-1)*T;
+x = 0.7*sin(2*pi*50*t) + sin(2*pi*120*t); 
+y = x + 2*randn(size(t));
+NFFT = 2^nextpow2(L);
+Y = fft(y,NFFT)/L;
+f = Fs/2*linspace(0,1,NFFT/2+1);
+res.csv = [f; 2*abs(Y(1:NFFT/2+1))]';</textarea>
         <button onclick="submitRequest()">Eval</button>
     </fieldset>
-    
-    <div id="chart_div" style="margin-left:-3em;width: 500px; height: 300px;"></div>
+    <div>
+        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="canvas"></svg>
+    </div>
   </body>
 </html>

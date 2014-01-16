@@ -1,4 +1,4 @@
-function server = myServer(port)
+function server = startMyServer(port)
 %myServer demonstrates how to build a routing table and start the server.  
 
 % Cast port to number in case this is called from the command line.
@@ -24,5 +24,8 @@ else
 end
 
 fprintf(1, 'Visit http://localhost:%d/docs/index.html\n', port);
+
+% Blocking call for Standalone Application or Octave.
+server.start();
 
 end
