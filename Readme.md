@@ -56,6 +56,7 @@ Inside the MATLAB IDE
 
 Inside the Octave shell
 
+    cd <PATH_TO_NuCompRes>
     addpath('resources;lib;lib/octave;support/json;examples');
     server = startMyServer(8080);
 

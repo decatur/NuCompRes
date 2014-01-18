@@ -5,7 +5,7 @@ else
   port = 8080;
 end
 
-addpath('lib;lib/json;lib/octave;resources;examples');
+addpath('resources;lib;lib/octave;support/json;examples');
 
 server = startMyServer(port);
 
