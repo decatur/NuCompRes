@@ -14,7 +14,12 @@ function text = readFileToString( file,  encoding )
 
   assert( ~isempty(encoding), 'The encoding must not be null.' );
 
-  fid = fopen(file, 'r', 'l', encoding);
+  if exist('OCTAVE_VERSION', 'builtin')
+    fid = fopen(file, 'r', 'l');
+  else
+    fid = fopen(file, 'r', 'l', encoding);
+  end
+  
   text = fscanf(fid, '%c');
   fclose(fid);
 

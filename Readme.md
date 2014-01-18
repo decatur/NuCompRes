@@ -56,11 +56,8 @@ Inside the MATLAB IDE
 
 Inside the Octave shell
 
-    addpath('lib;lib/octave');
-    addpath('resources');
-    addpath('examples');
-    server = myServer(8080);
-    server.start();
+    addpath('resources;lib;lib/octave;support/json;examples');
+    server = startMyServer(8080);
 
 Or from the command line
 

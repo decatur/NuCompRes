@@ -1,4 +1,4 @@
-addpath('json;test;test/json');
+addpath('support/json;test;test/json');
 
 assertEquals(JSON_parse('[1, 2]'), [1 2]);
 assertEquals(JSON_parse('[[1, 2], [3, 4]]'), [1 2;3 4]);

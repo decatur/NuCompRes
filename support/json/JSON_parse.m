@@ -46,7 +46,7 @@ function value = JSON_parse(json, reviver)
     rev = [];
   end
   
-  isoct=exist('OCTAVE_VERSION');
+  isoct = exist('OCTAVE_VERSION', 'builtin');
   arraytoken=find(inStr=='[' | inStr==']' | inStr=='"');
   jstr=regexprep(inStr,'\\\\','  ');
   escquote=regexp(jstr,'\\"');

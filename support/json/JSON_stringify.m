@@ -26,7 +26,7 @@ function json=JSON_stringify(value, replacer, space)
 %   Qianqian Fang 2011-09-09
 
 
-  context = struct('isOctave', exist('OCTAVE_VERSION'));
+  context = struct('isOctave', exist('OCTAVE_VERSION', 'builtin'));
   if exist('replacer', 'var') && ~isempty(replacer)
     context.replacer = replacer;
   end
