@@ -1,7 +1,7 @@
-function res = EvalResource( req )
+function response = EvalResource( request )
 
-  res = struct;
-  eval( req.expression );
+  response = struct;
+  eval( request.expression );
   
 end
 

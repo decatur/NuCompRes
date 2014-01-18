@@ -2,7 +2,7 @@ function stopped = processRequest(routingTable, sock)
 %processRequest() parses and dispatches a HTTP/1.1 request.  
 % See http://tools.ietf.org/html/rfc2616
 
-bufferSize = 0xfff;
+bufferSize = 4096;
 
 [clientSocket, clientInfo] = accept(sock);
 
@@ -53,14 +53,15 @@ while true
             
             for j=2:length(headers)
                 tokens = regexp(headers{j}, '^([^:]+):(.*)$', 'tokens');
-                headerStruct.(strrep(tokens{1}{1}, '-', '')) = tokens{1}{2};
+                key = lower(strrep(tokens{1}{1}, '-', '_'));
+                headerStruct.(key) = tokens{1}{2};
             end
             
             sprintf('Headers ..............')
             headerStruct
             
-            if isfield( headerStruct, 'ContentLength' )
-                contentLength = str2num(headerStruct.ContentLength);
+            if isfield( headerStruct, 'content_length' )
+                contentLength = str2num(headerStruct.content_length);
             end
             
             if isempty(contentLength) || contentLength == 0
@@ -92,15 +93,9 @@ if strcmp(uri, '/favicon.ico')
 	return;
 end
 
-sprintf("%s\n%s", strftime("%Y-%m-%d", localtime(time())), req)
+sprintf('%s\n%s', strftime('%Y-%m-%d', localtime(time())), req)
 
-if isfield(headerStruct, 'ContentType')
-    contentTypeHeader = headerStruct.ContentType;
-else
-    contentTypeHeader = [];
-end
-
-response = RestRouterSansException(routingTable, method, uri, requestBody, contentTypeHeader);
+response = RestRouterSansException(routingTable, method, uri, requestBody, headerStruct);
 
 msg = sprintf('HTTP/1.1 %s\r\n', response.status);
 

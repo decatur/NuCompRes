@@ -1,14 +1,14 @@
-function NuServerJavaProxy(requestMethod_str, requestUrl_str, requestBody_str, contentType)
+function NuServerJavaProxy(javaServerObj)
 % Wolfgang Kühn 2013-11-29
 
   persistent callback
 
-  if nargin == 1
-    callback = requestMethod_str;
+  if isa(javaServerObj, 'function_handle')
+    callback = javaServerObj;
     return;
   end
     
-  callback(requestMethod_str, requestUrl_str, requestBody_str, contentType);
+  callback();
 
 end
 

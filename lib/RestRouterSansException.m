@@ -1,10 +1,10 @@
-function response = RestRouterSansException(routingTable, requestMethod, requestUrl, requestBody, contentType)
-    
+function response = RestRouterSansException(routingTable, requestMethod, requestUrl, requestBody, requestHeaders)
+
     try
       response = RestRouter(routingTable, requestMethod, requestUrl, ...
-        requestBody, contentType);
-    catch % err  % the MATLAB way
-      err = lasterror(); % Octave bug
+        requestBody, requestHeaders);
+    catch my_caught_error % Octave workaround
+      err = my_caught_error;
       response = struct();
       
       if strfind(err.identifier, 'http') == 1

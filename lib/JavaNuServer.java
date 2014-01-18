@@ -33,7 +33,7 @@ public class JavaNuServer implements HttpHandler, Runnable {
     public String method;
     public String uri;
     public String requestBody;
-    public String contentType;
+    public String[][] requestHeaders;
     public String accept;
     
     public String responseStatus;
@@ -139,6 +139,25 @@ public class JavaNuServer implements HttpHandler, Runnable {
             // System.out.println("JavaNuServer: " + ex.getRequestHeaders());
         }
         
+        Map<String,List<String>> headers = ex.getRequestHeaders();
+        this.requestHeaders = new String[headers.size()][2];
+        int count = 0;
+        
+        System.out.println("Headers");
+        for (Map.Entry<String,List<String>> entry : headers.entrySet()) {
+            System.out.print(entry.getKey() + ": ");
+            requestHeaders[count][0] = entry.getKey();
+            List<String> item = entry.getValue();
+            requestHeaders[count][1] = "";
+            String sep = "";
+            for (int i=0; i<item.size(); i++) {                    
+                requestHeaders[count][1] += sep + item.get(i);
+                sep = ";";
+            }
+            System.out.print("\n");
+            count++;
+        }
+        
         try {
 
             InputStream is = ex.getRequestBody();
@@ -148,7 +167,6 @@ public class JavaNuServer implements HttpHandler, Runnable {
             this.method = ex.getRequestMethod();
             this.uri = uri;
             this.requestBody = requestBody;
-            this.contentType = ex.getRequestHeaders().getFirst("Content-Type");
             this.accept = ex.getRequestHeaders().getFirst("Accept");
             
             if ( DEBUG ) {
@@ -208,8 +226,7 @@ public class JavaNuServer implements HttpHandler, Runnable {
         System.out.println("MatlabFevalCommand now running ...");
         try {
             // See methodsview('com.mathworks.jmi.Matlab')
-            Matlab.mtFevalConsoleOutput("NuServerJavaProxy", new Object[]{
-                this.method, this.uri, this.requestBody, this.contentType}, 0);
+            Matlab.mtFevalConsoleOutput("NuServerJavaProxy", new Object[]{this}, 0);
         } catch (Exception e) {
             e.printStackTrace();
             // This should not happen as NuServerJavaProxy must handle all exceptions

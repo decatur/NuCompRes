@@ -47,6 +47,9 @@
 function submitMultiPart(method, url, requestFields, callback) {
     if ( !window.FormData) alert('Your browser, most likely being pretty outdated, does not support FormData.');
 
+    var acceptElem = document.getElementById('AcceptContentType');
+    var accept = acceptElem.options[acceptElem.options.selectedIndex].innerHTML;
+    
     // See https://developer.mozilla.org/en-US/docs/Web/API/FormData
     var formData = new FormData();
     var i, id;
@@ -62,7 +65,7 @@ function submitMultiPart(method, url, requestFields, callback) {
             alert(xhr.responseText);
             return;
         }
-        var ct = xhr.getResponseHeader('Content-Type');
+        var ct = xhr.getResponseHeader('Content-Type').replace(/;.*/, '');
         if ( ct == "text/plain" ) {
             callback(xhr.responseText);
         } else if ( ct == "multipart/form-data") {
@@ -74,6 +77,7 @@ function submitMultiPart(method, url, requestFields, callback) {
     };
 
     xhr.open(method, url);
+    xhr.setRequestHeader("Accept", accept);
     xhr.send(formData);
 }
 
@@ -81,7 +85,7 @@ function submitEval() {
     submitMultiPart('POST', '/eval',
         ['expression'],
         function(responseFields) {
-            document.getElementById('ans').value = JSON.stringify(responseFields);
+            document.getElementById('ans').value = JSON.stringify(responseFields, null, 2);
         }
     )
 }
@@ -112,17 +116,21 @@ function submitStop() {
     <h1>NuCompRes HTML5 Form Example</h1>
     
     <p>
-        HTML5 Ajax style submits, no page transitions.
+        HTML5 Ajax style submits, no page transitions. Accepted Content Type for all requests:
+        <select id="AcceptContentType">
+            <option>application/json</option>
+            <option>multipart/form-data</option>
+        </select>
     <p>
     
     <fieldset>
         <legend>Evaluate MATLAB Expressions</legend>
         <p>
-            <label>Expression</br><textarea id="expression">a=1;
-b={1 2;3 4};
-res = struct();
-res.a=a;
-res.b=b;</textarea></label>
+            <label>Expression</br><textarea id="expression">% Solve Ax=b
+A = [1 -2;-3 4];
+b = [2; 1];
+response.x = A \ b;
+</textarea></label>
             <textarea id="ans"></textarea>
         </p>    
         <button onclick="submitEval()">Eval</button>

@@ -6,7 +6,7 @@
     
     <style>
         fieldset { margin:1em; padding:1ex; }
-        textarea { height:20ex; width:100ex; }
+        textarea { height:40ex; width:100ex; }
         body {
             font: 10px sans-serif;
         }
@@ -37,6 +37,10 @@
 if ( !window.FormData) alert('Your browser, most likely being pretty outdated, does not support FormData.');
     
 function submitRequest() {
+
+    var acceptElem = document.getElementById('AcceptContentType');
+    var accept = acceptElem.options[acceptElem.options.selectedIndex].innerHTML;
+    
     var formData = new FormData();
     var fields = ['expression'];
     var i, id;
@@ -52,22 +56,33 @@ function submitRequest() {
             alert(xhr.responseText);
             return;
         }
-        var resonse = JSON.parse(xhr.responseText); //MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
-        plot(resonse);
+        var ct = xhr.getResponseHeader('Content-Type').replace(/;.*/, '');
+        var matrix;
+        if ( ct == "multipart/form-data") {
+            var resonse = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
+            if ( response.data ) {
+                matrix = d3.csv.parseRows(resonse.data);
+            }
+        } else if ( ct == 'application/json' ) {
+            var resonse = JSON.parse(xhr.responseText);
+            matrix = resonse.data;
+        }
+        
+        if ( matrix ) {
+            plot(matrix);
+        } else {
+            alert('Response must contain a data field.');
+        }
     };
 
     xhr.open('POST', '/eval');
+    xhr.setRequestHeader("Accept", accept);
     xhr.send(formData);
 }
 
 var svg;
 
-function plot(res) {
-    /*csv = res.csv;
-    if ( typeof csv !== 'string' ) {
-        alert('Expected csv-format, found ' + csv);
-        return;
-    }*/
+function plot(data) {
 
     // As of beginning 2014, D3 seems to be the most promising graphical library.
     // Steep learning curve, but powerful.
@@ -102,7 +117,6 @@ function plot(res) {
       .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    var data = res.csv;//d3.csv.parseRows(csv);
     var colCount = data[0].length;
     
     var minX = data[0][0];
@@ -166,8 +180,12 @@ function plot(res) {
   <body>
     <h1>NuCompRes Chart Curves</h1>
     <p>
-        The expression must yield a matrix with 3 columns. Column 2 and 3 are plotted over column 1.
-        <a href="https://github.com/mbostock/d3">D3.js</a> renders the graph.
+        The expression must return a <i>data</i> field with at least 2 columns. Columns 2 and higher 3 are plotted over column 1.
+        <a href="https://github.com/mbostock/d3">D3.js</a> renders the graph. Accepted Content Type for all requests:
+        <select id="AcceptContentType">
+            <option>application/json</option>
+            <option>multipart/form-data</option>
+        </select>
     </p>
     
     <fieldset>
@@ -182,7 +200,7 @@ y = x + 2*randn(size(t));
 NFFT = 2^nextpow2(L);
 Y = fft(y,NFFT)/L;
 f = Fs/2*linspace(0,1,NFFT/2+1);
-res.csv = [f; 2*abs(Y(1:NFFT/2+1))]';</textarea>
+response.data = [f; 2*abs(Y(1:NFFT/2+1))]';</textarea>
         <button onclick="submitRequest()">Eval</button>
     </fieldset>
     <div>
