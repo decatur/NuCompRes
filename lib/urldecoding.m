@@ -1,10 +1,10 @@
 function u = urldecoding(s)
+%u = urldecoding(s) converts an URL-encoded string into its original unencoded form.
 % Example:
 %   urldecoding('http%3A%2F%2Ffoo%20bar%2F') -> http://foo bar/
 %
 % Copyright@ 2013 Wolfgang Kuehn
 % Submitted to http://rosettacode.org/wiki/URL_decoding#MATLAB_.2F_Octave
-% TODO: Submitted with k+3 <= length(s) bug!
 
 	u = '';
   k = 1;
