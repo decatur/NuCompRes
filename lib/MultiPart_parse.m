@@ -18,10 +18,12 @@ for i=2:length(parts)-1
   subparts = regexp(parts{i}, '\r\n\r\n', 'split');
   headers = regexp(subparts{1}, '\r\n', 'split');
   for j=2:length(headers)
-    [headerName, value, params] = Header_parse(headers{j});
-    if strcmp(headerName, 'Content-Disposition');
-      assert( strcmpi(value, 'form-data') );
-      fieldName = params.name;
+    [headerName, value] = Header_parse(headers{j});
+    if strcmp(headerName, 'content_disposition');
+      % Assume we are looking at 'form-data; name="foo"'
+      elements = HeaderValue_parse( value );
+      assert( strcmpi(elements{1}.value, 'form-data') );
+      fieldName = elements{1}.params.name;
     end
   end
   

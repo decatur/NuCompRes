@@ -22,6 +22,6 @@ function response = RestRouterSansException(routingTable, requestMethod, request
       end
     end
 
-    fprintf(1, 'status %s\n%s\n', response.status, response.body);
+    % fprintf(1, 'status %s\n%s\n', response.status, response.body);
 
   end

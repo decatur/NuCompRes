@@ -42,7 +42,7 @@ Start the sample server on port 8080.
 Inside the MATLAB IDE
 
     cd <PATH_TO_NuCompRes>
-    addpath('resources;lib;support/json;examples');
+    addpath('resources;lib;support/json;support/d3;examples');
     javaaddpath('lib');
     server = startMyServer(8080);
 
@@ -51,7 +51,7 @@ Inside the MATLAB IDE
 Inside the Octave shell
 
     cd <PATH_TO_NuCompRes>
-    addpath('resources;lib;lib/octave;support/json;examples');
+    addpath('resources;lib;lib/octave;support/json;support/d3;examples');
     server = startMyServer(8080);
 
 Or from the command line

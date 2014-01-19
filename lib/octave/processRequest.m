@@ -3,10 +3,13 @@ function stopped = processRequest(routingTable, sock)
 % See http://tools.ietf.org/html/rfc2616
 
 bufferSize = 4096;
+DEBUG = false;
 
 [clientSocket, clientInfo] = accept(sock);
 
-clientInfo
+if DEBUG
+  clientInfo
+end
 
 headers = {};
 headerStruct = struct();
@@ -30,10 +33,16 @@ while true
     %data
     
     %if exist('data', 'var')
-    sprintf('%d: %s', count, char(data))
+    if DEBUG
+      sprintf('%d: %s', count, char(data))
+    end
+    
     req = sprintf('%s%s', req, char(data));
-    length(req)
-    contentLength
+    
+    if DEBUG
+      length(req)
+      contentLength
+    end
     
     if isempty(headers)
         index = strfind(req, sprintf('\r\n\r\n'));
@@ -52,13 +61,14 @@ while true
             version = tokens{1}{3};
             
             for j=2:length(headers)
-                tokens = regexp(headers{j}, '^([^:]+):(.*)$', 'tokens');
-                key = lower(strrep(tokens{1}{1}, '-', '_'));
-                headerStruct.(key) = tokens{1}{2};
+                [name, value] = Header_parse(headers{j});
+                headerStruct.(name) = value;
             end
             
-            sprintf('Headers ..............')
-            headerStruct
+            if DEBUG
+              sprintf('Headers ..............')
+              headerStruct
+            end
             
             if isfield( headerStruct, 'content_length' )
                 contentLength = str2num(headerStruct.content_length);
@@ -71,8 +81,10 @@ while true
                 break;
             end
             
-            sprintf('contentLength: %d', contentLength)
-            sprintf('req: %d foo: %d', length(req), contentLength + index + 3)
+            if DEBUG
+              sprintf('contentLength: %d', contentLength)
+              sprintf('req: %d foo: %d', length(req), contentLength + index + 3)
+            end
             
             % TODO: Reject reuests with any Content-Encoding header.
         end
@@ -82,10 +94,7 @@ while true
         requestBody = req((index + 4):end);
         break;
     end
-    %else
-        % TODO: When is this the case?
-    %    break;
-    %end
+
 end
 
 if strcmp(uri, '/favicon.ico')
@@ -93,7 +102,9 @@ if strcmp(uri, '/favicon.ico')
 	return;
 end
 
-sprintf('%s\n%s', strftime('%Y-%m-%d', localtime(time())), req)
+if DEBUG
+  sprintf('%s\n%s', strftime('%Y-%m-%d', localtime(time())), req)
+end
 
 response = RestRouterSansException(routingTable, method, uri, requestBody, headerStruct);
 
@@ -104,7 +115,9 @@ if length(response.body) > 0
     % TODO: Send Server: NuCompRes-Server/0.1.0
 end
 
-msg
+if DEBUG
+  msg
+end
 
 send(clientSocket, msg);
 disconnect(clientSocket);

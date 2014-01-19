@@ -1,6 +1,6 @@
-addpath('json');
-addpath('test');
-source('json/JSON_stringify.m');
+addpath('support/json;test');
+
+source('support/JSON_stringify.m');
 
 assertEquals(JSON_stringify(['foo' 'bar']), '"foobar"');
 
@@ -83,3 +83,12 @@ assertEquals(JSON_stringify(s), '[{"foo":1},{"foo":2}]');
 
 oAct=JSON_parse(readFileToString('pass1.json', 'utf-8'));
 writeStringToFile('pass1.json', JSON_stringify(oAct,[],4), 'UTF-8');
+
+% Performance
+m=ones(1, 1000);
+tic
+JSON_stringify(m);
+toc
+tic
+JSON_stringify(m');
+toc

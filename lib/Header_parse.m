@@ -1,15 +1,24 @@
-function [ name, value, params ] = Header_parse( header )
-%Header_parse parses the name and value of an HTTP header.
+function [ name, value ] = Header_parse( header )
+%Header_parse parses a HTTP header into normalized name and value.
 %
-% http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
+% Use HeaderValue_parse() to further parse the structure of the value.
+%
+% Example
+%   [name, value] = Header_parse('Content-Type: multipart/form-data; boundary=----')
+%     name  = content_type
+%     value = multipart/form-data; boundary=----
+%
+% See http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2
+%
 % Copyright@ 2013 Wolfgang Kuehn
 
-% Example: 
-%    name         value                parameter
-%   'contentType: multipart/form-data; boundary=--7dd11c272075'
+tokens = regexp(header, '^([^:]+):(.*)$', 'tokens');
+if isempty(tokens) || length(tokens{1}) ~= 2
+  error('Invalid header: %s', header);
+end
 
-index = strfind(header, ':');
-name = header(1:index-1);
-[value, params] = HeaderValue_parse(header(index+1:end));
+% Normalize
+name = lower(strrep(strtrim(tokens{1}{1}), '-', '_'));
+value = strtrim(tokens{1}{2});
 
 end

@@ -28,7 +28,7 @@
         }
 
     </style>
-    <script src="http://d3js.org/d3.v3.js"></script>
+    <script src="d3-v3.js"></script>
     <script src="MultiPart_parse.js"></script>
     
     <script>
@@ -59,13 +59,13 @@ function submitRequest() {
         var ct = xhr.getResponseHeader('Content-Type').replace(/;.*/, '');
         var matrix;
         if ( ct == "multipart/form-data") {
-            var resonse = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
+            var response = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
             if ( response.data ) {
-                matrix = d3.csv.parseRows(resonse.data);
+                matrix = d3.csv.parseRows(response.data);
             }
         } else if ( ct == 'application/json' ) {
-            var resonse = JSON.parse(xhr.responseText);
-            matrix = resonse.data;
+            var response = JSON.parse(xhr.responseText);
+            matrix = response.data;
         }
         
         if ( matrix ) {

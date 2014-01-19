@@ -1,20 +1,31 @@
 function response = RestRouter(routingTable, requestMethod, requestUrl, requestBody, requestHeaders)
-
+%response = RestRouter() routes incomming requests to numerical resources.
+%
+% Arguments
+%   requestHeaders: Structure containing the request headers. Keys must be normalized, i.e
+%        content_type for Content-Type. 
+%
+  
   response = struct();
 
   if isfield(requestHeaders, 'content_type')
-    [contentType, contentTypeParams] = HeaderValue_parse(requestHeaders.content_type);
+    elements = HeaderValue_parse(requestHeaders.content_type);
+    contentType = elements{1}.value;
+    contentTypeParams = elements{1}.params;
   else
     contentType = 'text/plain';
   end
   
   if isfield(requestHeaders, 'accept')
-    response.contentType = HeaderValue_parse(requestHeaders.accept);
+    elements = HeaderValue_parse(requestHeaders.accept);
+    % TODO: Don't just take the first element! Select the one with the most weight.
+    % See http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
+    response.contentType = elements{1}.value;
   else
     response.contentType = 'application/json';
   end
 
-  fprintf(1, '%s %s %s\n%s\n', requestMethod, requestUrl, contentType, requestBody);
+  % fprintf(1, '%s %s %s\n%s\n', requestMethod, requestUrl, contentType, requestBody);
   %%keyboard();
 
   % Example requestUrl: '/foo/:id?arg=3
