@@ -1,6 +1,6 @@
 addpath('support/json;test');
 
-source('support/JSON_stringify.m');
+source('support/json/JSON_stringify.m');
 
 assertEquals(JSON_stringify(['foo' 'bar']), '"foobar"');
 

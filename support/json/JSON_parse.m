@@ -16,6 +16,9 @@ function value = JSON_parse(json, reviver)
 % Example:
 %   JSON_parse('[[[1,2],[3,4]],[[5,6],[7,8]]]')
 %   JSON_parse('{"foo":"Hello", "bar":1}', @(obj, key, value) class(value))
+%   JSON_parse(['[' repmat('[1, 2, 3],', 1, 100) '[3, false, null],[5,6, 7]]'])
+%   JSON_parse('[[1, 2, 3],[3, 4, null],[5,6, 7]]')
+%   JSON_parse('[3, 4, null]')
 %
 % See testJSON_parse.m in the test suite for more examples.
 % The specs are at http://www.ietf.org/rfc/rfc4627.txt
@@ -60,7 +63,7 @@ function value = JSON_parse(json, reviver)
   value = parse_value();
   skip_whitespace();
   
-  % We should have reached the end of the text.
+  % End of text?
   if pos~=len+1
     error_pos('Unexpected char at position %d');
   end
@@ -91,22 +94,33 @@ function object = parse_object()
 end
 
 function object = parse_array() % JSON array is written in row-major order
-  global pos
+  global pos inStr
+  
   lPos = pos;
   
-  %object = parse_as_mat();
-  %return;
-  
-  try
-    object = json2array();
-    return;
-  catch
-    e = lasterror;
-    if strcmp(e.identifier, 'JSONparser:invalidFormat')
-      rethrow(e);
+  if regexp(inStr(pos:end), '^(\s*[\s*){2}[^\[]')
+    try
+      object = json2D2array();
+      return;
+    catch
+      e = lasterror;
+      if strcmp(e.identifier, 'JSONparser:invalidFormat')
+        rethrow(e);
+      end
+      pos = lPos;
     end
-    pos = lPos;
-  end
+  elseif regexp(inStr(pos:end), '^\s*[\s*[^\[]')  
+    try
+      object = json1D2array();
+      return;
+    catch
+      e = lasterror;
+      if strcmp(e.identifier, 'JSONparser:invalidFormat')
+        rethrow(e);
+      end
+      pos = lPos;
+    end
+  end 
   
   parse_char('[');
   object = cell(0, 1);
@@ -125,7 +139,68 @@ function object = parse_array() % JSON array is written in row-major order
   parse_char(']');
 end
 
-function mat = json2array() % JSON array is written in row-major order
+function vec = json1D2array()
+  global pos inStr
+
+  s = inStr(pos:end); % '[1, 2, 3]...'
+
+
+  p = '\s*(-?\d+(\.\d+)?(e(+|-)?\d+)?|null)\s*';
+
+  pp = [ '^\[(' p ',)*' p '\]' ];
+  
+  [t, e] = regexp(s, pp, 'tokens', 'end', 'once');
+
+  if isempty(t)
+    error('Not a matrix');
+  end
+  
+  s = s(2:e-1);
+
+  s = strrep(s, 'null', 'NaN');
+
+  % nElem = 1+sum(s==',');
+
+  vec = sscanf(s, '%g ,').';
+  pos = pos + e;
+end
+
+function mat = json2D2array()
+  global pos inStr
+
+  s = inStr(pos:end); %'[[1, 2, 3],[3, 4, null],[5,6, 7]]}....'
+
+  m = regexp(s, '^\[\s*\[(\s*\w+\s*,)*\s*\w+\s*\]', 'once', 'match');
+
+  nCols = 1+sum(m==',');
+
+  p = '\s*(-?\d+(\.\d+)?(e(+|-)?\d+)?|null)\s*';
+
+  n = char('0' + (nCols-1));
+
+  pp = [ '\s*\[(' p ',)' '{' n ',' n '}' p '\]\s*' ];
+  pp = [ '^\[(' pp ',)*(' pp ')\]' ];
+
+  [t, e] = regexp(s, pp, 'tokens', 'end');
+
+  if isempty(t)
+    error('Not a matrix');
+  end
+  
+  s = s(2:e-1);
+
+  s = strrep(s, 'null', 'NaN');
+
+  nRows = sum(s=='[');
+
+  fmt = ['[' repmat('%g ,', 1, nCols-1) '%g],'];
+
+  mat = reshape(sscanf(s, fmt), nCols, nRows)';
+  
+  pos = pos + e;
+end
+
+function mat = json2array_() % JSON array is written in row-major order
   level = 1;
   dims = [1];
   cDims = [0];
@@ -386,7 +461,8 @@ function error_pos(msg, offset)
       post = '';
     end
     msg = [msg ': %s<error>%s'];
-    error('JSONparser:invalidFormat', msg, index, pre, post);
+
+error('JSONparser:invalidFormat', msg, index, pre, post);
   else
     error('JSONparser:invalidFormat', msg);
   end
@@ -403,3 +479,4 @@ function validKey = valid_field(key)
     validKey = regexprep(validKey,'[^0-9A-Za-z_]', '_');
   end
 end
+

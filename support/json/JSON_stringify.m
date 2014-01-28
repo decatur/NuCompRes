@@ -37,7 +37,7 @@ function json=JSON_stringify(value, replacer, space)
     else
         context.indent = space;
     end
-    context.nl = sprintf('\n');
+    context.nl = sprintf('\r\n');
   else
     context.indent = '';
     context.nl = '';
@@ -50,12 +50,22 @@ function json=JSON_stringify(value, replacer, space)
 end
 
 function json = str(key, holder, context)
-% 
-    
+%  
+  % key
+  % holder
+  
   if isempty(key)
     value = holder;
   elseif iscell(holder)
-    value = holder{key};
+      s = size(holder);
+      if length(s) > 3
+        value = holder(key, :);
+        value = reshape(value, s(2), s(end));
+      elseif s(1) == 2
+        value = holder(key, :);
+      elseif s(1) == 1
+        value = holder{1, key};
+      end
   elseif isstruct(holder)
     if isnumeric(key)
       % holder is struct array.
@@ -69,7 +79,7 @@ function json = str(key, holder, context)
   end
 
   if iscell(value)
-    json = array2json(value, context);
+    json = cell2json(value, context);
   elseif ismatrix(value)
     if isempty(value)
       json = 'null';
@@ -111,19 +121,44 @@ function txt=struct2json(value, context)
   context.gap = [context.gap context.indent];
     
   names = fieldnames(value);
+  l = length(names);
 
-  for i=1:length(names)
+  for i=1:l
     key = names{i};
     txt = sprintf('%s%s"%s":%s', txt, context.gap, key, str(key, value, context));
-    if i<length(names)
+    if i<l
       txt = sprintf('%s,%s', txt, context.nl);
     end
   end
     
   if ~isempty(context.indent)
-    txt = sprintf('%s\n%s}', txt, mind);
+    txt = sprintf('%s\r\n%s}', txt, mind);
   else
     txt = sprintf('%s}', txt);
+  end
+end
+
+% This is a copy of struct2json with obvious modifications.
+function txt=cell2json(value, context)
+  assert(iscell(value), 'input is not a struct');
+    
+  txt = sprintf('[%s', context.nl);
+  mind = context.gap;
+  context.gap = [context.gap context.indent];
+  l = length(value);
+  
+  for i=1:l
+    txt = sprintf('%s%s%s', txt, context.gap, str(i, value, context));
+    
+    if i<l
+      txt = sprintf('%s,%s', txt, context.nl);
+    end
+  end
+    
+  if ~isempty(context.indent)
+    txt = sprintf('%s\r\n%s]', txt, mind);
+  else
+    txt = sprintf('%s]', txt);
   end
 end
 
@@ -141,97 +176,48 @@ function newText = specialNumbers2NaN(text)
   newText = strrep(newText, 'NaN','null');
 end
 
-function txt=array2json(value, context)
-  mindGap = context.gap;
-  
-  s = size(value);
-  
-  % MATLAB uses column-major order, see
-  % http://en.wikipedia.org/wiki/Row-major_order.
-  % Transform to row-major order.
-  % TODO: Try to avoid this copy!
-  value = permute(value, length(s):-1:1);
-  
-  isNumericArray = isnumeric(value);
-  
-  if isNumericArray && ~isreal(value)
+function txt = matrix2D2json(value, context)
+
+  if isnumeric(value) && ~isreal(value)
     value = complex2nan(value);
   end
   
-  if s(1) == 1
-      s = s(2:end);
-  end
-
-  p = zeros(1,length(s));
-  for k=1:length(s)
-    p(k) = prod(s(k:length(s)));
-  end
-  
-  %p
-  gap = '';
+  gap = sprintf('%s%s', context.gap, context.indent);
   
   if ~isempty(context.indent)
-    sep = sprintf(',\n');
+    sep = ', ';
+    %gap = sprintf('\n%s%s', context.indent, context.gap);
   else
     sep = ',';
+    %gap = '';
   end
 
-  txt = '';
-  level = -1;
-  
-  for i=1:s(end):numel(value)
-      
-    mo = mod(i-1, p);
-    if ( find(~mo) == level)
-      txt = sprintf('%s%s', txt, sep);
-    end
-      
-    %mo
-    
-    for k=1:length(mo)
-      if mo(k) == 0
-        gap = [mindGap repmat(context.indent, 1, k-1)];
-        if k == 1 && all(mo == 0)
-          txt = sprintf('%s[%s', txt, context.nl);
-        else
-          txt = sprintf('%s%s[%s', txt, gap, context.nl);
-        end
-      end
-    end
-    
-    gap = [gap context.indent];
-    context.gap = gap;
-    
-    if isNumericArray
-      % This will handle both numerical and logical arrays.
-      array = mat2str(value(i:(i+s(end)-1)), 10);
-      % Depending on dimensionality we have to either replace ';' or ' '.
-      array = strrep(array, '[', ''); array = strrep(array, ']', '');
-      array = strrep(array, ' ', [',' context.nl gap]);
-      array = strrep(array, ';', [',' context.nl gap]);
-      
-      txt = sprintf('%s%s%s', txt, gap, specialNumbers2NaN(array));
-    else
-      c = value(i:(i+s(end)-1));
-      for j=1:length(c)
-        txt = sprintf('%s%s%s', txt, gap, str(j, c, context));
-        if j < length(c)
-          txt = sprintf('%s%s', txt, sep);
-        end
-      end
-      txt = sprintf('%s', txt);
-    end
-      
-    mo = mod(i-1+s(end), p);
-    level = find(~mo);
-    for k=length(mo):-1:1
-      if mo(k) == 0
-        gap = [mindGap repmat(context.indent, 1, k-1)];
-        context.gap = gap;
-        txt = sprintf('%s%s%s]', txt, context.nl, gap);
-      end
-    end
+  fmt = '%.9g';
+  fmt = sprintf(' [\r\n%s%s%s%s\r\n%s],', gap, context.indent, repmat([fmt sep], 1, columns(value)-1), fmt, gap);
+  nd = ndims (value);
+  txt = sprintf (fmt, permute (value, [2, 1, 3:nd]));
+  txt(1) = '';
+  txt(end) = '';
+  txt = sprintf('[\r\n%s%s\r\n%s]', gap, txt, context.gap);
+end
 
+function txt = array2json(value, context)
+  s = size(value);
+  mindGap = context.gap;
+  
+  if length(s) > 2
+    context.gap = [context.gap context.indent];
+    txt = sprintf('[\r\n%s', context.gap);
+    sep = '';
+    for i=1:s(1)
+      m = value(i, :);
+      m = reshape(m, s(2), s(end));
+      txt = sprintf('%s%s%s%s', txt, sep, array2json(m, context));
+      sep = ',';
+    end
+    txt = sprintf('%s\r\n%s]', txt, mindGap);
+  else
+    txt = matrix2D2json(value, context);
   end
 
 end
