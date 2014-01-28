@@ -1,18 +1,38 @@
 function server = NuServer(port, routingTable)
 %server = NuServer(port, routingTable)
 %
-% Copyright© 2013, Wolfgang Kuehn
+% Copyright© 2013-2014, Wolfgang Kuehn
 
-  serverObj = JavaNuServer.create(port, isdeployed);
-  serverObj.logLevel = 'DEBUG';
 
-  function RestRouterWrapper()
+  if exist('OCTAVE_VERSION', 'builtin')
+    isBlocking = true;
+    serverObj = javaMethod('create', 'JavaNuServer', port, isBlocking);
+    % Pass arrays as org.octave.Matrix to Java.
+    java_convert_matrix(1);
+  else
+    isBlocking = isdeployed;
+    serverObj = JavaNuServer.create(port, isBlocking);
+  end
+  
+  serverObj.logResponseStatus = 1;
+  
+  function java_s = javaAssignableString(s)
+    if exist('OCTAVE_VERSION', 'builtin')
+      java_s = s;
+    else
+      java_s = java.lang.String(s);
+    end
+  end
+
+  function RestRouterWrapper(serverObj, routingTable)
     
     % Convert java.lang.String[n][2] to structure with keys normalized like
     % Content-Type to content_type, for example.
     headers = struct();
-    for i=1:serverObj.requestHeaders.length()
-      header = serverObj.requestHeaders(i);
+    javaHeaders = serverObj.requestHeaders;
+    headerCount = size(javaHeaders, 1);
+    for i=1:headerCount
+      header = javaHeaders(i);
       key = char(header(1));
       key = lower(strrep(key, '-', '_'));
       headers.(key) = char(header(2));
@@ -24,32 +44,34 @@ function server = NuServer(port, routingTable)
 
     response = RestRouterSansException(routingTable, requestMethod, requestUrl, requestBody, headers);
     
-    serverObj.responseStatus = java.lang.String(response.status);
-    if isempty(response.body)
-      serverObj.responseBody = [];
-    else
-      serverObj.responseBody = java.lang.String(response.body);
+    serverObj.responseStatus = javaAssignableString(response.status);
+    
+    % TODO: Replace this code by serverObj.setResponseBody(response.body) and handle
+    % cases in Java.
+    if ~isempty(response.body)
+      if exist('OCTAVE_VERSION', 'builtin')
+        if class(response.body) == 'char'
+          serverObj.responseBodyOctave = int8(0+response.body);
+        else
+          serverObj.responseBodyOctave = response.body;
+        end
+      else
+        if class(response.body) == 'char'
+          serverObj.responseBodyMatlab = unicode2native(response.body);
+        else
+          serverObj.responseBodyMatlab = response.body;
+        end
+      end
     end
     
-    serverObj.responseContentType = java.lang.String(response.contentType);
+    serverObj.responseContentType = javaAssignableString(response.contentType);
   end
   
-  function start()
-    if isdeployed
-      % Standalone application
+  function start(serverObj, routingTable, isBlocking)
+    if isBlocking
+      % MATLAB Standalone application or Octave
       while serverObj.waitForRequest()
-        
-        % Provide the same interface as Matlab.mtFevalConsoleOutput.
-        % For this we have to convert java.lang.String[n][2] to cell array
-        % of 2-element cell arrays.
-        headers = {};
-        for i=1:serverObj.requestHeaders.length()
-          header = serverObj.requestHeaders(i);
-          headers{end+1} = {char(header(1)) char(header(2))};
-        end
-       
-        RestRouterWrapper(char(serverObj.method), char(serverObj.uri), ...
-            char(serverObj.requestBody), headers);
+        RestRouterWrapper(serverObj, routingTable);
       end
     else
       % MATLAB session
@@ -66,7 +88,11 @@ function server = NuServer(port, routingTable)
   NuServerJavaProxy(@RestRouterWrapper);
   
   server = struct();
-  server.start = @start;
-  server.stop = @stop;
+  server.start = @() start(serverObj, routingTable, isBlocking);
+  if ~isBlocking
+    % In blocking mode there will be, and should be, no way
+    % to stop the server from the MATLAB side.
+    server.stop = @stop;
+  end
 
 end

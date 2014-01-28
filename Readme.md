@@ -35,28 +35,12 @@ Please use git to retrieve a copy of the development branch, or
 
 # Usage
 
-Start the sample server on port 8080.
-
-## MATLAB
-
-Inside the MATLAB IDE
+We start the sample server on port 8080 inside the MATLAB IDE or on the Octave prompt:
 
     cd <PATH_TO_NuCompRes>
     addpath('resources;lib;support/json;support/d3;examples');
     javaaddpath('lib');
     server = startMyServer(8080);
-
-## Octave
-
-Inside the Octave shell
-
-    cd <PATH_TO_NuCompRes>
-    addpath('resources;lib;lib/octave;support/json;support/d3;examples');
-    server = startMyServer(8080);
-
-Or from the command line
-
-    octave.exe lib/octave/script.m 8080
 
 # Web Clients
 

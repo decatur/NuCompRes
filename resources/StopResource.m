@@ -1,6 +1,7 @@
-function response_str = StopResource( request )
+function response = StopResource( request )
 
-  response_str = 'Server stopped';
+  response.body = 'NuCompRes Server stopped';
+  response.status = '999 Server Stop';
   
 end
 

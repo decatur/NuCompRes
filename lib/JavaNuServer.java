@@ -15,7 +15,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 
 import com.mathworks.jmi.Matlab;
-
+import org.octave.Matrix;
 
 /**
 
@@ -26,6 +26,7 @@ import com.mathworks.jmi.Matlab;
 Friendly error messages: Limits on content length, see
 HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Internet Explorer\MAIN\ErrorThresholds
 @see http://support.microsoft.com/kb/218155
+https://code.google.com/p/information-dynamics-toolkit/wiki/OctaveJavaArrayConversion
 
 */
 public class JavaNuServer implements HttpHandler, Runnable {
@@ -37,26 +38,39 @@ public class JavaNuServer implements HttpHandler, Runnable {
     public String accept;
     
     public String responseStatus;
-    public String responseBody;
+    public byte[] responseBodyMatlab;
+    public Matrix responseBodyOctave;
     public String responseContentType;
 
-    public String logLevel = "DEBUG";
-    private boolean DEBUG = false;
-    private boolean isdeployed;
+    // This is so 1960-ish, but so is MATLAB/Octave: Avoid boolean-to-numeric cast problems.
+    public static int logRequestLine = 1;
+    public static int logResponseStatus = 0;
+    public static int logHeaders = 0;
+    public static int logMethodInvokation = 0;
+    public static int logBody = 0;
+    
+    private boolean isBlocking;
     private HttpServer httpServer;
     private int port;
         
-    public static JavaNuServer create(int port, boolean isdeployed) {
-        //System.out.println("JavaNuServer currentThread " + Thread.currentThread().getId());
+    public static JavaNuServer create(int port, boolean isBlocking) {
+    	logMessageByThread("create");
         JavaNuServer server = new JavaNuServer();
         
         server.port = port;
-        server.isdeployed = isdeployed;
+        server.isBlocking = isBlocking;
         
         return server;
     }
+    
+    private static void logMessageByThread(String msg) {
+    	if ( logMethodInvokation == 1 ) {
+    		System.out.println(msg + ": " + Thread.currentThread().toString());
+    	}
+    }
 
     private static void yield() {
+    	logMessageByThread("yield");
         synchronized( JavaNuServer.class )   {
             JavaNuServer.class.notifyAll();
         
@@ -73,7 +87,7 @@ public class JavaNuServer implements HttpHandler, Runnable {
     }
     
     public void start() throws IOException {
-        DEBUG = logLevel.equals("DEBUG");
+    	logMessageByThread("start");
         InetSocketAddress adr = new InetSocketAddress(port);
         httpServer = HttpServer.create(adr, 0);
         
@@ -85,6 +99,7 @@ public class JavaNuServer implements HttpHandler, Runnable {
     }
     
     public void stop() throws IOException {
+    	logMessageByThread("stop");
         // Stopping is idempotent.
         if ( this.httpServer == null ) return;
     
@@ -94,11 +109,12 @@ public class JavaNuServer implements HttpHandler, Runnable {
     }
     
     public boolean waitForRequest() throws IOException {
+    	logMessageByThread("waitForRequest");
         if ( httpServer == null ) {
             start();
         }
 
-        if ( this.isdeployed ) {
+        if ( this.isBlocking ) {
             JavaNuServer.yield();
             return httpServer != null;
         } else {
@@ -122,39 +138,31 @@ public class JavaNuServer implements HttpHandler, Runnable {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
+    	logMessageByThread("handle");
+    	
         String uri = ex.getRequestURI().toASCIIString();
         
-        if ( DEBUG ) {
-            System.out.println("JavaNuServer: " + ex.getRequestMethod() + " " + uri);
-            Map<String,List<String>> headers = ex.getRequestHeaders();
-            System.out.println("Headers");
-            for (Map.Entry<String,List<String>> entry : headers.entrySet()) {
-                System.out.print(entry.getKey() + ": ");
-                List<String> item = entry.getValue();
-                for (int i=0; i<item.size(); i++) {                    
-                    System.out.print(item.get(i) + "; ");
-                }
-                System.out.print("\n");
-            }
-            // System.out.println("JavaNuServer: " + ex.getRequestHeaders());
+        if ( logRequestLine == 1 ) {
+        	System.out.println("NuCompRes " + new java.util.Date().toString() +  " " + ex.getRequestMethod() + " " + uri);
         }
         
         Map<String,List<String>> headers = ex.getRequestHeaders();
         this.requestHeaders = new String[headers.size()][2];
         int count = 0;
         
-        System.out.println("Headers");
+        if ( logHeaders == 1 ) System.out.println("Headers");
         for (Map.Entry<String,List<String>> entry : headers.entrySet()) {
-            System.out.print(entry.getKey() + ": ");
+        	if ( logHeaders == 1 ) System.out.print(entry.getKey() + ": ");
             requestHeaders[count][0] = entry.getKey();
             List<String> item = entry.getValue();
             requestHeaders[count][1] = "";
             String sep = "";
-            for (int i=0; i<item.size(); i++) {                    
+            for (int i=0; i<item.size(); i++) {
+            	if ( logHeaders == 1 ) System.out.print(sep + item.get(i));
                 requestHeaders[count][1] += sep + item.get(i);
                 sep = ";";
             }
-            System.out.print("\n");
+            if ( logHeaders == 1 ) System.out.print("\n");
             count++;
         }
         
@@ -164,16 +172,15 @@ public class JavaNuServer implements HttpHandler, Runnable {
             String requestBody = convertStreamToString(is);
             is.close();
             
+            this.responseBodyOctave = null;
+            this.responseBodyMatlab = null;
+            
             this.method = ex.getRequestMethod();
             this.uri = uri;
             this.requestBody = requestBody;
             this.accept = ex.getRequestHeaders().getFirst("Accept");
             
-            if ( DEBUG ) {
-                System.out.println("Scheduling function");
-            }            
-            
-            if ( this.isdeployed ) {
+            if ( this.isBlocking ) {
                 JavaNuServer.yield();
             } else {
                 Matlab.whenMatlabIdle(this);
@@ -187,37 +194,58 @@ public class JavaNuServer implements HttpHandler, Runnable {
                     }
                 }
             }
+
             
-            String status = this.responseStatus;
-            String responseBody = this.responseBody;
+            byte[] rb;
             
-            if ( DEBUG ) {
-                System.out.println("Response: " + 
-                    status + '\n' + responseBody);
+            if ( this.responseBodyOctave != null ) {
+            	rb = this.responseBodyOctave.toByte();
+        	} else if ( this.responseBodyMatlab != null ) {
+            	rb = responseBodyMatlab;
+        	} else {
+        		rb = new byte[]{};
+        	}
+            
+            if ( logRequestLine == 1 ) {
+                System.out.println("Response Status: " + this.responseStatus);
             }
             
-            ex.getResponseHeaders().add("Content-Type", this.responseContentType);
+            ex.getResponseHeaders().add("Content-Type", this.responseContentType + ";charset=utf-8");
             ex.getResponseHeaders().add("Cache-Control", "no-cache");
             ex.getResponseHeaders().add("Pragma", "no-cache");
             ex.getResponseHeaders().add("Expires", "-1");
-
-            if ( responseBody == null ) responseBody = "";
             
-            ex.sendResponseHeaders(Integer.parseInt(status.substring(0, 3)), responseBody.length());
+            int statusCode = Integer.parseInt(this.responseStatus.substring(0, 3));
+            boolean stopping = false;
+            
+            if ( statusCode == 999 ) {
+            	stopping = true;
+            	statusCode = 200;
+            }
+            
+            ex.sendResponseHeaders(statusCode, rb.length);
             OutputStream os = ex.getResponseBody();
-            os.write(responseBody.getBytes());
+            os.write(rb);
             os.close();
             ex.close();
+            
+            if ( stopping ) {
+            	// Only now can we stop the HTTP-Server and wake up the MATLAB thread.
+                this.stop();
+                synchronized( JavaNuServer.class )   {
+                    JavaNuServer.class.notifyAll();
+                }
+            }
         
         } catch (Exception e) {
             e.printStackTrace();
+            //this.stop();
+            //synchronized( JavaNuServer.class )   {
+            //    JavaNuServer.class.notifyAll();
+            //}
         }
         
-        if ( uri.matches("^/admin/stop(/)?") ) {
-            this.httpServer.stop(0);
-            this.httpServer = null;
-            JavaNuServer.yield();
-        }
+       
 
     }
 
@@ -237,6 +265,15 @@ public class JavaNuServer implements HttpHandler, Runnable {
             JavaNuServer.class.notifyAll();
         }
             
+    }
+    
+    public void debugOctave() {
+    	System.out.println(this.responseBodyOctave);
+    	System.out.println(this.responseBodyOctave.getClassName());
+    	
+    	byte[] rb = this.responseBodyOctave.toByte();
+    	
+    	for (int i=0; i<rb.length; i++) System.out.print(rb[i]);
     }
     
 

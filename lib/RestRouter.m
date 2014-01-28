@@ -112,7 +112,12 @@ function response = RestRouter(routingTable, requestMethod, requestUrl, requestB
         error('http400:Bad_Request', 'Invalid Accept Content-Type: %s', response.contentType);
       end
 
-      response.status = '200 OK';
+      if isfield(handlerResponse, 'status')
+        response.status = handlerResponse.status;
+      else
+        response.status = '200 OK';
+      end
+      
       return;
    end
   end

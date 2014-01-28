@@ -17,15 +17,11 @@ routingTable{end+1} = {'POST /pricer/options/american/config', aop.setConfig};
 routingTable{end+1} = {'GET /pricer/options/american/config', aop.getConfig};
 routingTable{end+1} = {'POST /admin/stop', @StopResource};
 
-if exist('octave_config_info')
-    server = NuServerOctave(port, routingTable);
-else
-    server = NuServer(port, routingTable);
-end
+server = NuServer(port, routingTable);
 
 fprintf(1, 'Visit http://localhost:%d/docs/index.html\n', port);
 
-% Blocking call for Standalone Application or Octave.
+% Note: This call will block in case of Standalone Application or Octave!
 server.start();
 
 end
