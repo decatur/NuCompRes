@@ -1,2 +1,2 @@
-* Describe how to start octave server: 
-octave --path lib;lib/octave;resources;examples myServer 8080
+* More documentation
+* Provide example for binary resources, such as image manipulation
