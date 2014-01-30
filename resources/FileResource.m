@@ -4,21 +4,20 @@ function response = FileResource( request )
   mimes = struct( ...
     'html', 'text/html', ...
     'js', 'application/javascript', ...
-    'css', 'text/css');
+    'css', 'text/css', ...
+    'png', 'image/png');
 
+  
   try
+    fid = fopen (request.filename, 'rb');
     if exist('OCTAVE_VERSION', 'builtin')
-      fid = fopen (request.filename, 'r');
       % TODO: Why need to cast?
       response.body = int8(fread(fid, Inf, 'int8'));
-      fclose(fid);
     else
-      % response.body = fileread( request.filename );
-      fid = fopen(request.filename, 'rb');
       response.body = fread(fid, '*uint8')';
-      fclose(fid);
     end
- 
+    fclose(fid);
+
   catch % err  % the MATLAB way
     err = lasterror(); % Octave bug
     error('http404:Not_Found', '%s', err.message);
