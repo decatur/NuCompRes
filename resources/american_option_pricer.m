@@ -46,7 +46,7 @@ end
 function response = execResource(req)
   % Do some validation
   assert( isnumeric(req.T) && req.T > 0, ...
-    'expiry time must be positive, found %s', num2str(req.T) );
+    'expiry time must be numeric and positive, found %s', num2str(req.T) );
   % Execute
   response = struct();
   response.fairValue = ...
