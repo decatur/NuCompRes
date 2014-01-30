@@ -5,6 +5,7 @@ function response = RestRouter(routingTable, requestMethod, requestUrl, requestB
 %   requestHeaders: Structure containing the request headers. Keys must be normalized, i.e
 %        content_type for Content-Type. 
 %
+% Copyright@ 2014 Wolfgang Kuehn
   
   response = struct();
 
@@ -17,10 +18,10 @@ function response = RestRouter(routingTable, requestMethod, requestUrl, requestB
   end
   
   if isfield(requestHeaders, 'accept')
-    elements = HeaderValue_parse(requestHeaders.accept);
-    % TODO: Don't just take the first element! Select the one with the most weight.
-    % See http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
-    response.contentType = elements{1}.value;
+    provided = {'application/json' 'application/x-www-form-urlencoded' 'multipart/form-data'};
+    weights = HeaderValueWeights(provided, requestHeaders.accept);
+    idx = find(weights==max(weights));
+    response.contentType = provided(idx(1));
   else
     response.contentType = 'application/json';
   end
@@ -68,7 +69,9 @@ function response = RestRouter(routingTable, requestMethod, requestUrl, requestB
     if ~isempty(match)
       fHandle = route{2};
 
-      if strcmp(contentType, 'application/x-www-form-urlencoded')
+      if strcmp(contentType, 'application/json')
+        request_struct = JSON_parse(requestBody);
+      elseif strcmp(contentType, 'application/x-www-form-urlencoded')
         request_struct = querystring_parse(requestBody);
       elseif strcmp(contentType, 'multipart/form-data')
         request_struct = MultiPart_parse(requestBody, contentTypeParams.boundary);

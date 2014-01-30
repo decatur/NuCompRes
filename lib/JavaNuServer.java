@@ -14,22 +14,14 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 
-import com.mathworks.jmi.Matlab;
-import org.octave.Matrix;
-
 /**
-
-@see https://code.google.com/p/matlabcontrol/source/browse/
-@see http://svncisd.ethz.ch/repositories/youscope/csb/matlab-scripting/trunk/src/ch/ethz/csb/matlabscripting/JMIWrapper.java
-@see http://svncisd.ethz.ch/repositories/youscope/csb/matlab-scripting/trunk/src/ch/ethz/csb/matlabscripting/JMIWrapper.java
 
 Friendly error messages: Limits on content length, see
 HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Internet Explorer\MAIN\ErrorThresholds
 @see http://support.microsoft.com/kb/218155
-https://code.google.com/p/information-dynamics-toolkit/wiki/OctaveJavaArrayConversion
 
 */
-public class JavaNuServer implements HttpHandler, Runnable {
+public class JavaNuServer implements HttpHandler {
     
     public String method;
     public String uri;
@@ -39,37 +31,33 @@ public class JavaNuServer implements HttpHandler, Runnable {
     
     public String responseStatus;
     public byte[] responseBodyMatlab;
-    public Matrix responseBodyOctave;
     public String responseContentType;
 
     // This is so 1960-ish, but so is MATLAB/Octave: Avoid boolean-to-numeric cast problems.
-    public static int logRequestLine = 1;
-    public static int logResponseStatus = 0;
-    public static int logHeaders = 0;
-    public static int logMethodInvokation = 0;
-    public static int logBody = 0;
+    public int logRequestLine = 1;
+    public int logResponseStatus = 0;
+    public int logHeaders = 0;
+    public int logMethodInvokation = 1;
+    public int logBody = 0;
     
-    private boolean isBlocking;
+    public boolean isBlocking;
+    
+    int port;
     private HttpServer httpServer;
-    private int port;
-        
-    public static JavaNuServer create(int port, boolean isBlocking) {
-    	logMessageByThread("create");
-        JavaNuServer server = new JavaNuServer();
-        
-        server.port = port;
-        server.isBlocking = isBlocking;
-        
-        return server;
+    
+    public JavaNuServer(int port) {
+        //logMessageByThread("create");
+        this.port = port;
+        this.isBlocking = true;
     }
     
-    private static void logMessageByThread(String msg) {
+    private void logMessageByThread(String msg) {
     	if ( logMethodInvokation == 1 ) {
     		System.out.println(msg + ": " + Thread.currentThread().toString());
     	}
     }
 
-    private static void yield() {
+    private void yield() {
     	logMessageByThread("yield");
         synchronized( JavaNuServer.class )   {
             JavaNuServer.class.notifyAll();
@@ -115,7 +103,7 @@ public class JavaNuServer implements HttpHandler, Runnable {
         }
 
         if ( this.isBlocking ) {
-            JavaNuServer.yield();
+            yield();
             return httpServer != null;
         } else {
             return true;
@@ -136,6 +124,20 @@ public class JavaNuServer implements HttpHandler, Runnable {
         return content.toString(); 
     }
 
+    void requestInit() {
+        this.responseBodyMatlab = null;
+    }
+    
+    byte[] getResponseBytes() {
+        if ( responseBodyMatlab != null ) return responseBodyMatlab;
+        else return new byte[]{};
+    }
+    
+    void enterComputationalThread() {
+        logMessageByThread("enterComputationalThread");
+        yield();
+    }
+    
     @Override
     public void handle(HttpExchange ex) throws IOException {
     	logMessageByThread("handle");
@@ -172,39 +174,16 @@ public class JavaNuServer implements HttpHandler, Runnable {
             String requestBody = convertStreamToString(is);
             is.close();
             
-            this.responseBodyOctave = null;
-            this.responseBodyMatlab = null;
+            requestInit();
             
             this.method = ex.getRequestMethod();
             this.uri = uri;
             this.requestBody = requestBody;
             this.accept = ex.getRequestHeaders().getFirst("Accept");
             
-            if ( this.isBlocking ) {
-                JavaNuServer.yield();
-            } else {
-                Matlab.whenMatlabIdle(this);
+            enterComputationalThread();
             
-                // Pause this handler thread.
-                synchronized( JavaNuServer.class )   {
-                    try {   
-                        JavaNuServer.class.wait();
-                    } catch ( InterruptedException e ) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            
-            byte[] rb;
-            
-            if ( this.responseBodyOctave != null ) {
-            	rb = this.responseBodyOctave.toByte();
-        	} else if ( this.responseBodyMatlab != null ) {
-            	rb = responseBodyMatlab;
-        	} else {
-        		rb = new byte[]{};
-        	}
+            byte[] rb = getResponseBytes();
             
             if ( logRequestLine == 1 ) {
                 System.out.println("Response Status: " + this.responseStatus);
@@ -249,32 +228,6 @@ public class JavaNuServer implements HttpHandler, Runnable {
 
     }
 
-    public void run() {
-        // Called from matlab main thread.
-        System.out.println("MatlabFevalCommand now running ...");
-        try {
-            // See methodsview('com.mathworks.jmi.Matlab')
-            Matlab.mtFevalConsoleOutput("NuServerJavaProxy", new Object[]{this}, 0);
-        } catch (Exception e) {
-            e.printStackTrace();
-            // This should not happen as NuServerJavaProxy must handle all exceptions
-        }
-        
-        // Wake up handler thread.
-        synchronized( JavaNuServer.class )   {
-            JavaNuServer.class.notifyAll();
-        }
-            
-    }
-    
-    public void debugOctave() {
-    	System.out.println(this.responseBodyOctave);
-    	System.out.println(this.responseBodyOctave.getClassName());
-    	
-    	byte[] rb = this.responseBodyOctave.toByte();
-    	
-    	for (int i=0; i<rb.length; i++) System.out.print(rb[i]);
-    }
-    
+
 
 }

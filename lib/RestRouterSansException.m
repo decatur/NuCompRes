@@ -17,8 +17,8 @@ function response = RestRouterSansException(routingTable, requestMethod, request
       % see http://support.microsoft.com/kb/294807
       response.body = sprintf('%s%s', err.message, repmat(' ', 1, 513));
       response.contentType = 'text/plain';
-      if exist('getReport')
-        fprintf(1, '%s\n', getReport(err,'extended'));
+      if ~exist('OCTAVE_VERSION', 'builtin')
+        fprintf(1, '%s\n', getReport(err, 'extended'));
       end
     end
 

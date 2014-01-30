@@ -1,5 +1,5 @@
 function NuServerJavaProxy(javaServerObj)
-% Wolfgang Kühn 2013-11-29
+% Copyright@ 2013-2014 Wolfgang Kuehn
 
   persistent callback
 
@@ -8,7 +8,11 @@ function NuServerJavaProxy(javaServerObj)
     return;
   end
     
-  callback();
+  if isempty(callback)
+    error('Callback is unset or was reseted');
+  end
+  
+  callback(javaServerObj);
 
 end
 

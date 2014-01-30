@@ -19,8 +19,6 @@ function elements = HeaderValue_parse( headerValue )
 
 elementsStr = regexp(headerValue, ',', 'split');
 elements = cell(1, length(elementsStr));
-
-params = struct();
       
 for i=1:length(elementsStr)
   parts = regexp(elementsStr{i}, ';', 'split');
