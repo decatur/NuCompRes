@@ -1,4 +1,9 @@
-// <path-to-node>/bin/node nodejs-client.js myremotehost 8080 "response=1+1"
+/*
+ * Simple Node.js script to query the eval-resource from a command line.
+ *
+ * Usage:
+ *  <path-to-node>/bin/node nodejs-client.js myremotehost 8080 "response=1+1"
+ */
 
 var http = require('http');
 
