@@ -87,8 +87,8 @@ function response = RestRouter(routingTable, requestMethod, requestUrl, requestB
 
       try
         handlerResponse = fHandle(request_struct);
-      catch % err  % the MATLAB way
-        err = lasterror(); % Octave bug
+      catch  my_caught_error % Octave workaround
+        err = my_caught_error;
         if strfind(err.identifier, 'http') == 1
           % Already restful.
           rethrow(err);

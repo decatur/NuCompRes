@@ -10,19 +10,13 @@ function response = FileResource( request )
   
   try
     fid = fopen (request.filename, 'rb');
-    if exist('OCTAVE_VERSION', 'builtin')
-      % TODO: Why need to cast?
-      response.body = int8(fread(fid, Inf, 'int8'));
-    else
-      response.body = fread(fid, '*uint8')';
-    end
+    response.body = fread(fid, Inf, '*int8').';
     fclose(fid);
-
-  catch % err  % the MATLAB way
-    err = lasterror(); % Octave bug
+  catch my_caught_error % Octave workaround
+    err = my_caught_error;
     error('http404:Not_Found', '%s', err.message);
   end
-  
+ 
   [~,~, ext] = fileparts( request.filename );
   ext = ext(2:end);
   if isfield(mimes, ext)
@@ -32,6 +26,5 @@ function response = FileResource( request )
   end
   
 end
-
 
 
