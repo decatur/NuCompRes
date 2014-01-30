@@ -155,11 +155,19 @@ If the content type is text/plain or is missing, the server will pass the raw (u
 All MATLAB code can be debugged and changed while the server is running.
 If you change and compile the Java code, please restart the MATLAB session to flush all Java related caches.
 
+# Load Balancing
+
+Any MATLAB or Octave session is single threaded. So each NuCompRes-Server can only handle one
+request at a time. If you want to serve several request simultaneously, then put a proxy server
+in front of those NuCompRes-Servers. This proxy then dispatches requests to an idle NuCompRes-Server.
+
+You find a simple [load balancing server](load-balancer/balancing.md) in this project. 
+
 # Into the Wild
-NuComRes does not play in the league of load balancing and security (authentication).
+NuComRes does not play in the league of production grade load balancing and security (authentication).
 A reverse proxy such as [Nginx](http://wiki.nginx.org/Main) can handle these issues.
 
-**Do not**, ever, place a NuComRes server into an untrusted zone.
+**Do not**, ever, place a NuComRes server directly in an untrusted zone.
 
 # Code Base
 NuCompRes is completely written in MATLAB code. Only a very small, single class Java-Proxy must be incorporated.
