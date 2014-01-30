@@ -49,12 +49,11 @@ function submit(method, url, requestFields, callback) {
     elem = document.getElementById('ContentType');
     var contentType = elem.options[elem.options.selectedIndex].innerHTML;
     
-    var requestData = {}, i, id;
+    var requestData = {}, id;
     
-    for (i=0; i<requestFields.length; i++) {
-        id = requestFields[i];
+    for (id in requestFields) {
         elem = document.getElementById(id);
-        if ( elem.type == 'number' ) {
+        if ( requestFields[id] == 'float' ) {
             requestData[id] = parseFloat(elem.value);
         } else {
             requestData[id] = elem.value;
@@ -113,7 +112,7 @@ function submit(method, url, requestFields, callback) {
 
 function submitEval() {
     submit('POST', '/eval',
-        ['expression'],
+        {  expression: 'string' },
         function(responseFields) {
             document.getElementById('ans').value = JSON.stringify(responseFields, null, 2);
         }
@@ -122,7 +121,7 @@ function submitEval() {
 
 function submitPricing() {
     submit('POST', '/pricer/options/american',
-        ['S', 'E', 'T', 'r', 'sigma'],
+        { S: 'float', E:'float', T:'float', r:'float', sigma:'float' },
         function(responseFields) {
             document.getElementById('fairPrice').innerHTML = responseFields.fairValue;
         }
@@ -131,7 +130,7 @@ function submitPricing() {
 
 function submitStop() {
     submit('POST', '/admin/stop',
-        [],
+        {},
         function(responseFields) {
             alert(JSON.stringify(responseFields));
         }
@@ -179,7 +178,7 @@ response.x = A \ b;
         <br/>
         <label>exercise price E<input id="E" value="10"/></label>
         <br/>
-        <label>expiry time T<input id="T" type="number" value="1"/></label>
+        <label>expiry time T<input id="T" value="1"/></label>
         <br/>
         <label>risk-free interest rate r<input id="r" value="0.06"/></label>
         <br/>
