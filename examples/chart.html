@@ -98,14 +98,6 @@ function plot(data) {
     var y = d3.scale.linear()
         .range([height, 0]);
 
-    var xAxis = d3.svg.axis()
-        .scale(x)
-        .orient("bottom");
-
-    var yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left");
-    
     // svg is the D3-selection pointing to the g-child of the #canvas element,
     // see https://github.com/mbostock/d3/wiki/Selections
     // We remove the complete graph.
@@ -134,24 +126,23 @@ function plot(data) {
     x.domain([0, maxX]);
     y.domain([minY, maxY]);
 
+    
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+    
     svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
-        .call(xAxis)
-        .append("text")
-            .attr("y", 6)
-            .attr("dy", ".71em")
-            .style("text-anchor", "end")
-            .text("x");;
+        .call(xAxis);
 
     svg.append("g")
         .attr("class", "y axis")
-        .call(yAxis)
-        .append("text")
-            .attr("y", 6)
-            .attr("dy", ".71em")
-            .style("text-anchor", "end")
-            .text("y");
+        .call(yAxis);
 
     var xData = function(d) { return x(d[0]); }
     var cat10 = d3.scale.category10();
