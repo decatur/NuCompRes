@@ -193,7 +193,8 @@ function txt = matrix2D2json(value, context)
   end
 
   fmt = '%.9g';
-  fmt = sprintf(' [\r\n%s%s%s%s\r\n%s],', gap, context.indent, repmat([fmt sep], 1, columns(value)-1), fmt, gap);
+  colCount = size(value, 2);
+  fmt = sprintf(' [\r\n%s%s%s%s\r\n%s],', gap, context.indent, repmat([fmt sep], 1, colCount-1), fmt, gap);
   nd = ndims (value);
   txt = sprintf (fmt, permute (value, [2, 1, 3:nd]));
   txt(1) = '';
