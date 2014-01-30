@@ -53,7 +53,12 @@ function submit(method, url, requestFields, callback) {
     
     for (i=0; i<requestFields.length; i++) {
         id = requestFields[i];
-        requestData[id] = document.getElementById(id).value;
+        elem = document.getElementById(id);
+        if ( elem.type == 'number' ) {
+            requestData[id] = parseFloat(elem.value);
+        } else {
+            requestData[id] = elem.value;
+        }
     }
     
     function readyHandler() {
@@ -174,7 +179,7 @@ response.x = A \ b;
         <br/>
         <label>exercise price E<input id="E" value="10"/></label>
         <br/>
-        <label>expiry time T<input id="T" value="1"/></label>
+        <label>expiry time T<input id="T" type="number" value="1"/></label>
         <br/>
         <label>risk-free interest rate r<input id="r" value="0.06"/></label>
         <br/>
