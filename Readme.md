@@ -65,7 +65,7 @@ You can communicate with a remote server from inside MATLAB.
 
 Example
 <pre>
->> urlread('http://e212203:8080/eval', 'POST', {'expression' '1+1'})
+>> urlread('http://myremotehost:8080/eval', 'POST', {'expression' 'response=1+1'})
 ans =
 result=2
 </pre> 
@@ -75,7 +75,7 @@ result=2
 POST the expression `1+1` to the `eval` resource with a content type of multipart/form-data:
 
 <pre style="color:white;background-color:black">
-    > curl -F expression="1+1" http://myremotehost:8080/eval
+    > curl -F expression="response=1+1" http://myremotehost:8080/eval
     
         ---
         Content-Disposition: form-data; name="result"
