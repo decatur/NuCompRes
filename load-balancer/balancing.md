@@ -1,8 +1,9 @@
 # Load balancing
 
-Start NuCompRes-Servers on port 9000 and 9001. Then start the load balancing proxy.
-
-Now issue (for example with the html5 sample client) several sleep requests
+This simple load balancing server is written for [Node.js](http://nodejs.org/).
+1. Start NuCompRes-Servers on port 9000 and 9001. 
+2. Start the load balancing proxy.
+3. Now issue (for example with the html5 sample client) several sleep requests
     
     sleep(1);
     response.x = 'Done'
