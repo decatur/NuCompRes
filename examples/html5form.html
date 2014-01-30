@@ -19,14 +19,13 @@
         }
             
         label {
-            display: block;
-            width:30em;
-            clear:both;
+            position:relative;
         }
         
         input {
             width:10em;
-            float:right;
+            position:absolute;
+            left:20ex;
         }
         
         textarea {
@@ -42,25 +41,22 @@
         <script src="MultiPart_parse.js"></script>
         <script>
 
-
-
-function submitMultiPart(method, url, requestFields, callback) {
-    if ( !window.FormData) alert('Your browser, most likely being pretty outdated, does not support FormData.');
-
-    var acceptElem = document.getElementById('AcceptContentType');
-    var accept = acceptElem.options[acceptElem.options.selectedIndex].innerHTML;
+        
+ 
+function submit(method, url, requestFields, callback) {
+    var elem = document.getElementById('AcceptContentType');
+    var accept = elem.options[elem.options.selectedIndex].innerHTML;
+    elem = document.getElementById('ContentType');
+    var contentType = elem.options[elem.options.selectedIndex].innerHTML;
     
-    // See https://developer.mozilla.org/en-US/docs/Web/API/FormData
-    var formData = new FormData();
-    var i, id;
+    var requestData = {}, i, id;
     
     for (i=0; i<requestFields.length; i++) {
         id = requestFields[i];
-        formData.append(id, document.getElementById(id).value);
+        requestData[id] = document.getElementById(id).value;
     }
-        
-    var xhr = new XMLHttpRequest();
-    xhr.onload = function() {
+    
+    function readyHandler() {
         if ( xhr.status != 200 ) {
             alert(xhr.responseText);
             return;
@@ -75,14 +71,43 @@ function submitMultiPart(method, url, requestFields, callback) {
             callback(JSON.parse(xhr.responseText));
         }
     };
+    
+    var xhr = new XMLHttpRequest();
+    
+    if ( xhr.onload === null) {
+        // XMLHttpRequest2 
+        xhr.onload = readyHandler;
+    } else {
+        // Old style
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                readyHandler();
+            }
+        }
+    }
 
     xhr.open(method, url);
     xhr.setRequestHeader("Accept", accept);
-    xhr.send(formData);
+    
+    if ( contentType === 'application/json' ) {
+        xhr.setRequestHeader("Content-Type", contentType);
+        xhr.send(JSON.stringify(requestData));
+    } else {
+        // See https://developer.mozilla.org/en-US/docs/Web/API/FormData
+        if ( !window.FormData ) {
+            alert('Your browser, most likely being pretty outdated, does not support FormData.');
+            return;
+        }
+        var formData = new FormData();
+        for (var id in requestData) {
+            formData.append(id, requestData[id]);
+        }
+        xhr.send(formData);
+    }
 }
 
 function submitEval() {
-    submitMultiPart('POST', '/eval',
+    submit('POST', '/eval',
         ['expression'],
         function(responseFields) {
             document.getElementById('ans').value = JSON.stringify(responseFields, null, 2);
@@ -91,7 +116,7 @@ function submitEval() {
 }
 
 function submitPricing() {
-    submitMultiPart('POST', '/pricer/options/american',
+    submit('POST', '/pricer/options/american',
         ['S', 'E', 'T', 'r', 'sigma'],
         function(responseFields) {
             document.getElementById('fairPrice').innerHTML = responseFields.fairValue;
@@ -100,7 +125,7 @@ function submitPricing() {
 }
 
 function submitStop() {
-    submitMultiPart('POST', '/admin/stop',
+    submit('POST', '/admin/stop',
         [],
         function(responseFields) {
             alert(JSON.stringify(responseFields));
@@ -116,17 +141,24 @@ function submitStop() {
     <h1>NuCompRes HTML5 Form Example</h1>
     
     <p>
-        HTML5 Ajax style submits, no page transitions. Accepted Content Type for all requests:
-        <select id="AcceptContentType">
-            <option>application/json</option>
-            <option>multipart/form-data</option>
-        </select>
-    <p>
+        <label>Sent Content Type
+            <select id="ContentType">
+                <option>application/json</option>
+                <option>multipart/form-data</option>
+            </select>
+        </label>
+        <label>Accepted Content Type
+            <select id="AcceptContentType">
+                <option>application/json</option>
+                <option>multipart/form-data</option>
+            </select>
+        </label>
+    </p>
     
     <fieldset>
         <legend>Evaluate MATLAB Expressions</legend>
         <p>
-            <label>Expression</br><textarea id="expression">% Solve Ax=b
+            <label>Expression<br/><textarea id="expression">% Solve Ax=b
 A = [1 -2;-3 4];
 b = [2; 1];
 response.x = A \ b;
@@ -139,10 +171,15 @@ response.x = A \ b;
     <fieldset>
         <legend>American Option Pricing</legend>
         <label>asset starting price S<input id="S" value="9"/></label>
+        <br/>
         <label>exercise price E<input id="E" value="10"/></label>
+        <br/>
         <label>expiry time T<input id="T" value="1"/></label>
+        <br/>
         <label>risk-free interest rate r<input id="r" value="0.06"/></label>
+        <br/>
         <label>volatility sigma<input id="sigma" value="0.3"/></label>
+        <br/>
         <button onclick="submitPricing()">Price</button>
         
         <p>
