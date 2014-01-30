@@ -1,6 +1,8 @@
 # Load balancing
 
 This simple load balancing server is written for [Node.js](http://nodejs.org/).
+It acts as a [reverse http proxy](http://en.wikipedia.org/wiki/Reverse_proxy).
+
 1. Start NuCompRes-Servers on port 9000 and 9001. 
 2. Start the load balancing proxy.
 3. Now issue (for example with the html5 sample client) several sleep requests

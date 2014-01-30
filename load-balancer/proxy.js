@@ -3,13 +3,14 @@
  * to the servers listening on ports 9000 and 9001.
  *
  * Based on http://www.catonmat.net/http-proxy-in-nodejs/
+ * TODO: Update according https://gist.github.com/e0ne/3156463
  */
 
 var http = require('http');
 
 var proxyPort = 8080,
     servers = [
-        { port:9000 }, { port:9001 }//, { port:9002 }, etc.
+        { host:'127.0.0.1', port:9000 }, { host: '127.0.0.1', port:9001 }//, etc.
     ];
 
 
@@ -41,7 +42,7 @@ http.createServer(function(request, response) {
   console.log(now.toGMTString(), request.method, request.url, '->', server.port);
 
   var options = {
-      host: '127.0.0.1',
+      host: server.host,
       path: request.url,
       port: server.port,
       method: request.method,
