@@ -37,7 +37,7 @@ public class JavaNuServer implements HttpHandler {
     public int logRequestLine = 1;
     public int logResponseStatus = 0;
     public int logHeaders = 0;
-    public int logMethodInvokation = 1;
+    public int logMethodInvokation = 0;
     public int logBody = 0;
     
     public boolean isBlocking;
@@ -189,7 +189,7 @@ public class JavaNuServer implements HttpHandler {
                 System.out.println("Response Status: " + this.responseStatus);
             }
             
-            ex.getResponseHeaders().add("Content-Type", this.responseContentType + ";charset=utf-8");
+            ex.getResponseHeaders().add("Content-Type", this.responseContentType);
             ex.getResponseHeaders().add("Cache-Control", "no-cache");
             ex.getResponseHeaders().add("Pragma", "no-cache");
             ex.getResponseHeaders().add("Expires", "-1");
