@@ -25,6 +25,10 @@ function response = FileResource( request )
     response.contentType = 'text/plain';
   end
   
+  if ~strcmp(response.contentType, 'image/png')
+    response.contentType = [response.contentType ';charset=utf-8'];
+  end
+  
 end
 
 
