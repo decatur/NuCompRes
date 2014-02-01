@@ -46,8 +46,7 @@ function server = NuServer(port, routingTable, config)
 
     response = RestRouterSansException(routingTable, requestMethod, requestUrl, requestBody, headers);
     
-    serverObj.responseStatus = response.status;
-    serverObj.responseContentType = response.contentType;
+    
     
     % TODO: Replace this code by serverObj.setResponseBody(response.body) and handle
     % cases in Java.
@@ -55,17 +54,23 @@ function server = NuServer(port, routingTable, config)
       if exist('OCTAVE_VERSION', 'builtin')
         if ischar(response.body)
           serverObj.responseBodyOctave = int8(0+response.body);
+          % TODO: What is the encoding? Ascii?
         else
           serverObj.responseBodyOctave = response.body;
         end
       else
         if ischar(response.body)
-          serverObj.responseBodyMatlab = unicode2native(response.body);
+          serverObj.responseBodyMatlab = unicode2native(response.body, 'UTF-8');
+          response.contentType = [response.contentType ';charset=utf-8'];
         else
           serverObj.responseBodyMatlab = response.body;
         end
       end
     end
+    
+    serverObj.responseStatus = response.status;
+    serverObj.responseContentType = response.contentType;
+    
   end
   
   function start(serverObj, routingTable)
