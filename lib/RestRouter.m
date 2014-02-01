@@ -21,7 +21,7 @@ function response = RestRouter(routingTable, requestMethod, requestUrl, requestB
     provided = {'application/json' 'application/x-www-form-urlencoded' 'multipart/form-data'};
     weights = HeaderValueWeights(provided, requestHeaders.accept);
     idx = find(weights==max(weights));
-    response.contentType = provided(idx(1));
+    response.contentType = provided{idx(1)};
   else
     response.contentType = 'application/json';
   end
