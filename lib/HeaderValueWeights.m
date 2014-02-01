@@ -10,7 +10,7 @@ function weights = HeaderValueWeights( provided, acceptHeader )
 % Copyright@ 2014 Wolfgang Kuehn
 
 requestedValues = HeaderValue_parse(acceptHeader);
-weights = ones(1, length(provided));
+weights = zeros(1, length(provided));
 
 for i=1:length(requestedValues)
   value = requestedValues{i}.value;
