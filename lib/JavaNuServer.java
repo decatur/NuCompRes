@@ -2,9 +2,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.ByteArrayOutputStream;
 
 import java.util.Map;
 import java.util.List;
@@ -25,7 +23,7 @@ public class JavaNuServer implements HttpHandler {
     
     public String method;
     public String uri;
-    public String requestBody;
+    public byte[] requestBody;
     public String[][] requestHeaders;
     public String accept;
     
@@ -110,7 +108,7 @@ public class JavaNuServer implements HttpHandler {
         }
     }
     
-    String convertStreamToString(InputStream is) throws IOException {
+    /*String convertStreamToString(InputStream is) throws IOException {
         // TODO: Pass encoding!
         String encoding = "UTF-8";
         int bufferSize = 1024;
@@ -122,10 +120,25 @@ public class JavaNuServer implements HttpHandler {
             content.append(buffer,0,n);
         }
         return content.toString(); 
+    }*/
+    
+    byte[] convertStreamToBytes(InputStream ins) throws IOException {
+        ByteArrayOutputStream ous = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int read = 0;
+        while ( (read = ins.read(buffer)) != -1 ) {
+            ous.write(buffer, 0, read);
+        }
+        ous.close();
+        return ous.toByteArray();
     }
 
     void requestInit() {
         this.responseBodyMatlab = null;
+    }
+    
+    void setRequestBytes(byte[] body) {
+        requestBody = body;
     }
     
     byte[] getResponseBytes() {
@@ -171,14 +184,13 @@ public class JavaNuServer implements HttpHandler {
         try {
 
             InputStream is = ex.getRequestBody();
-            String requestBody = convertStreamToString(is);
+            setRequestBytes(convertStreamToBytes(is));
             is.close();
             
             requestInit();
             
             this.method = ex.getRequestMethod();
             this.uri = uri;
-            this.requestBody = requestBody;
             this.accept = ex.getRequestHeaders().getFirst("Accept");
             
             enterComputationalThread();

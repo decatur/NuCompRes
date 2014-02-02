@@ -70,14 +70,14 @@ function response = RestRouter(routingTable, requestMethod, requestUrl, requestB
       fHandle = route{2};
 
       if strcmp(contentType, 'application/json')
-        request_struct = JSON_parse(requestBody);
+        request_struct = JSON_parse(char(requestBody));
       elseif strcmp(contentType, 'application/x-www-form-urlencoded')
-        request_struct = querystring_parse(requestBody);
+        request_struct = querystring_parse(char(requestBody));
       elseif strcmp(contentType, 'multipart/form-data')
         request_struct = MultiPart_parse(requestBody, contentTypeParams.boundary);
       elseif strcmp(contentType, 'text/plain')
         request_struct = struct();
-        request_struct.body = requestBody;
+        request_struct.body = char(requestBody);
       else
         error('http400:Bad_Request', 'Invalid Content-Type: %s', contentType);
       end

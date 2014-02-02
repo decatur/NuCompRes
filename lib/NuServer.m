@@ -16,6 +16,7 @@ function server = NuServer(port, routingTable, config)
     serverObj = javaObject('JavaNuServerOctave', port);
     % Pass arrays as org.octave.Matrix to Java.
     java_convert_matrix(1);
+    java_unsigned_conversion(0);
   else
     if config.blocking;
       serverObj = javaObject('JavaNuServer', port);
@@ -42,21 +43,32 @@ function server = NuServer(port, routingTable, config)
        
     requestMethod = char(serverObj.method);
     requestUrl = char(serverObj.uri);
-    requestBody = char(serverObj.requestBody);
+    
+    if exist('OCTAVE_VERSION', 'builtin')
+      requestBody = serverObj.requestBody;
+    else
+      requestBody = serverObj.requestBody;
+    end
 
     response = RestRouterSansException(routingTable, requestMethod, requestUrl, requestBody, headers);
     
-    
+    %keyboard;
     
     % TODO: Replace this code by serverObj.setResponseBody(response.body) and handle
     % cases in Java.
     if ~isempty(response.body)
       if exist('OCTAVE_VERSION', 'builtin')
         if ischar(response.body)
-          serverObj.responseBodyOctave = int8(0+response.body);
+          data = int8(0+response.body);
           % TODO: What is the encoding? Ascii?
         else
-          serverObj.responseBodyOctave = response.body;
+          data = response.body;
+        end
+        % Octave byte mapping workaround, see JavaNuServerOctave.java
+        if length(data) > 1
+          serverObj.setBytes(data, length(data));
+        else 
+          serverObj.setBytes([data 0], length(data));
         end
       else
         if ischar(response.body)

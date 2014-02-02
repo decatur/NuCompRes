@@ -1,0 +1,32 @@
+Accept:application/json
+Accept-Encoding:gzip,deflate,sdch
+Accept-Language:de,de-DE;q=0.8,en-US;q=0.6,en;q=0.4
+Connection:keep-alive
+Content-Length:499
+Content-Type:multipart/form-data; boundary=----WebKitFormBoundarysLNm0BrLwezNds8h
+Host:localhost:8080
+Origin:http://localhost:8080
+Referer:http://localhost:8080/docs/html5form.html
+User-Agent:Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.102 Safari/537.36
+
+------WebKitFormBoundarysLNm0BrLwezNds8h
+Content-Disposition: form-data; name="S"
+
+9
+------WebKitFormBoundarysLNm0BrLwezNds8h
+Content-Disposition: form-data; name="E"
+
+10
+------WebKitFormBoundarysLNm0BrLwezNds8h
+Content-Disposition: form-data; name="T"
+
+1
+------WebKitFormBoundarysLNm0BrLwezNds8h
+Content-Disposition: form-data; name="r"
+
+0.06
+------WebKitFormBoundarysLNm0BrLwezNds8h
+Content-Disposition: form-data; name="sigma"
+
+0.3
+------WebKitFormBoundarysLNm0BrLwezNds8h--
