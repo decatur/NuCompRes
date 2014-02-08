@@ -15,6 +15,7 @@ routingTable{end+1} = {'PUT /pricer/options/american/config', aop.setConfig};
 routingTable{end+1} = {'POST /pricer/options/american/config', aop.setConfig};
 % Dito for GET, but it's realy bad style.
 routingTable{end+1} = {'GET /pricer/options/american/config', aop.getConfig};
+routingTable{end+1} = {'POST /image/edgedetector', @EdgeDetectorResource};
 routingTable{end+1} = {'POST /admin/stop', @StopResource};
 
 server = NuServer(port, routingTable);
