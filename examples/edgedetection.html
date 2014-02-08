@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>NuCompRes Image Processing Example</title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <style>
+           
+        </style>
+        
+        <script src="MultiPart_parse.js"></script>
+        <script>
+
+var imageObj, context;
+
+window.onload = function() {
+    var canvas = document.getElementById('myCanvas');
+    
+    if ( !canvas.getContext ) {
+        alert('Your browser, most likely being pretty outdated, does not support HTML5 Canvas.');
+        return;
+    }
+    
+    if ( !window.FormData ) {
+        alert('Your browser, most likely being pretty outdated, does not support HTML% FormData.');
+        return;
+    }
+    
+    context = canvas.getContext('2d');
+    imageObj = new Image();
+    imageObj.onload = function() {
+        context.drawImage(imageObj, 0, 0);
+    }
+
+    imageObj.src = 'edge.png';
+}
+    
+// See https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data
+// for working with binary data and the XMLHttpRequest.
+function process() {
+    var dim = {width: imageObj.width, height: imageObj.height};
+    
+    var imageData = context.getImageData(0, 0, dim.width, dim.height);
+    var data = imageData.data,
+        gray = [];
+
+    // iterate over all pixels
+    for (var i = 0, n = data.length; i < n; i += 4) {
+        gray.push((data[i]+data[i]+data[i])/3);
+        
+    }
+    
+    function onProcessedHandler(responseFields) {
+        var dim = responseFields.dim;
+        dim = String.fromCharCode.apply(null, new Uint8Array(dim));
+        dim = JSON.parse(dim);
+    
+        var gray = new Uint8Array(responseFields.data);
+        var imageData = context.createImageData(dim.width, dim.height);
+        var data = imageData.data;
+        for (var i = 0, j=0, n = data.length; i < n; i += 4, j++) {
+            data[i] = data[i+1] = data[i+2] = data[i+3] = gray[j];
+        }
+        
+        context.putImageData(imageData, imageObj.width, 0);
+    }
+    
+    processImage('/image/edgedetector', gray, dim, onProcessedHandler);
+
+}
+
+function processImage(url, data, dim, callback) {
+    var xhr = new XMLHttpRequest();
+    
+    
+    function readyHandler() {
+        if ( xhr.status != 200 ) {
+            alert(xhr.responseText);
+            return;
+        }
+        
+        var responseFields = MultiPart_parse(xhr.response, xhr.getResponseHeader('Content-Type'));
+        callback(responseFields);
+    };
+        
+    xhr.onload = readyHandler;
+    
+    xhr.open('POST', url);
+    xhr.responseType = "arraybuffer";
+    xhr.setRequestHeader('Accept', 'multipart/form-data');
+    
+    var formData = new FormData();
+    formData.append('dim', JSON.stringify(dim));
+     
+    var int8Array  = new Int8Array(data);
+    var arrayBuffer = int8Array.buffer;
+    var blob        = new Blob([arrayBuffer]);
+    formData.append('data', blob);
+
+    xhr.send(formData);
+}
+     
+        </script>
+            
+    </head>
+
+    <body>
+
+    <h1>NuCompRes Image Processing Example</h1>
+    
+    <p>
+        Send an image to MATLAB/Octave for <a href="http://en.wikipedia.org/wiki/Edge_detection">edge detection</a>.
+    </p>
+    
+    <canvas id="myCanvas" style="display:block" width="800" height="300"></canvas>
+    <button onclick="process()">Send</button>
+    </body>
+</html>
