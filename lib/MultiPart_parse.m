@@ -6,8 +6,7 @@ function partsByName = MultiPart_parse( body, boundary )
 % http://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
 % Copyright@ 2013 Wolfgang Kuehn
 
-typeinfo(body)
-assert( strcmpi(typeinfo(body), 'int8 matrix') );
+assert( strcmpi(class(body), 'int8') );
 
 boundary = sprintf('\r\n--%s', boundary);
 boundary = int8(0+boundary);
@@ -21,13 +20,15 @@ partsByName = struct();
 for i=1:length(idx)-1
   part = body(idx(i):idx(i+1)-1);
 
-  subIdx = findPattern2(part, [13 10]);
-  headers = char(part(subIdx(2)+2:subIdx(4)-2));
-  content = part(subIdx(4)+2:end);
-  headers = regexp(headers, '\r\n', 'split');
+  headerEndIdx = findPattern2(part, [13 10 13 10]);
+  headers = part(1:headerEndIdx(1)+1);
+  content = part(headerEndIdx(1)+4:end);
+  
+  crlfIdx = findPattern2(headers, [13 10]);
 
-  for j=1:length(headers)
-    [headerName, value] = Header_parse(headers{j});
+  for j=2:length(crlfIdx)-1
+    header = headers(crlfIdx(j)+2: crlfIdx(j+1)-1);
+    [headerName, value] = Header_parse(char(header));
     if strcmp(headerName, 'content_disposition');
       % Assume we are looking at 'form-data; name="foo"'
       elements = HeaderValue_parse( value );
@@ -37,8 +38,12 @@ for i=1:length(idx)-1
   end
 
   
-  if ~isnan(str2double(char(content)))
+  if strfind(fieldName, '-number')
+    fieldName = strrep(fieldName, '-number', '');
     content = str2double(char(content));
+  elseif strfind(fieldName, '-string')
+    fieldName = strrep(fieldName, '-string', '');
+    content = char(content);
   end
   
   partsByName.(fieldName) = content;

@@ -6,46 +6,20 @@ function [body, boundary] = MultiPart_stringify( parts_struct )
 %
 % Copyright@ 2013 Wolfgang Kuehn
 
-body = '';
+body = [];
 boundary =  sprintf('%d', round(rand()*1e16));
 
 fields = fieldnames(parts_struct);
 
 for i=1:length(fields)
   value = parts_struct.(fields{i});
-
-  if isnumeric(value)
-    % Format 2-D matrices as csv.
-    assert( length(size(value)) == 2 );
-    formatStr = repmat('%g,\t', 1, size(value, 2));
-    formatStr = sprintf('%s\n', formatStr(1:end-3));
-    value = sprintf(formatStr, value');
-    value = value(1:end-1);
-  elseif iscell(value)
-    buf = '';
-    newline = sprintf('');
-    for rIndex=1:size(value, 1)
-      buf = sprintf('%s%s', buf, newline);
-      newline = sprintf('\n');
-      sep = '';
-      for cIndex=1:size(value, 2)
-        buf = sprintf('%s%s%g', buf, sep, value{rIndex, cIndex});
-        sep = sprintf('\t');
-      end
-    end
-    value = buf;
-  end
+  body = [body (0+sprintf('\r\n--%s\r\nContent-Disposition: form-data; name="%s"\r\n\r\n', ...
+    boundary, fields{i})) value];
   
-  %if isstruct(value)
-  %  value = JSON_stringify(value);
-  %end
-    
-  body = sprintf('%s\r\n--%s\r\nContent-Disposition: form-data; name="%s"\r\n\r\n%s', ...
-    body, boundary, fields{i}, value);
 end
 
 % Closing boundary.
-body = sprintf('%s\r\n--%s--', body, boundary);
+body = int8([body (0+ sprintf('\r\n--%s--', boundary))]);
 
 end
 

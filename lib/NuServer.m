@@ -47,7 +47,7 @@ function server = NuServer(port, routingTable, config)
     if exist('OCTAVE_VERSION', 'builtin')
       requestBody = serverObj.requestBody;
     else
-      requestBody = serverObj.requestBody;
+      requestBody = serverObj.requestBody.';
     end
 
     response = RestRouterSansException(routingTable, requestMethod, requestUrl, requestBody, headers);
