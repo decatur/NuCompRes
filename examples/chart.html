@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
   <head>
-    <title>NuCompRes Chart Curves</title>
+    <title>NuCompRes Chart</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     
     <style>
@@ -37,36 +37,17 @@
 if ( !window.FormData) alert('Your browser, most likely being pretty outdated, does not support FormData.');
     
 function submitRequest() {
-
-    var acceptElem = document.getElementById('AcceptContentType');
-    var accept = acceptElem.options[acceptElem.options.selectedIndex].innerHTML;
+    var requestObj = {expression: document.getElementById('expression').value}
     
-    var formData = new FormData();
-    var fields = ['expression'];
-    var i, id;
-    
-    for (i=0; i<fields.length; i++) {
-        id = fields[i];
-        formData.append(id, document.getElementById(id).value);
-    }
-        
     var xhr = new XMLHttpRequest();
     xhr.onload = function() {
         if ( xhr.status != 200 ) {
             alert(xhr.responseText);
             return;
         }
-        var ct = xhr.getResponseHeader('Content-Type').replace(/;.*/, '');
-        var matrix;
-        if ( ct == "multipart/form-data") {
-            var response = MultiPart_parse(xhr.responseText, xhr.getResponseHeader('Content-Type'));
-            if ( response.data ) {
-                matrix = d3.csv.parseRows(response.data);
-            }
-        } else if ( ct == 'application/json' ) {
-            var response = JSON.parse(xhr.responseText);
-            matrix = response.data;
-        }
+        
+        var response = JSON.parse(xhr.responseText);
+        var matrix = response.data;
         
         if ( matrix ) {
             plot(matrix);
@@ -76,8 +57,9 @@ function submitRequest() {
     };
 
     xhr.open('POST', '/eval');
-    xhr.setRequestHeader("Accept", accept);
-    xhr.send(formData);
+    xhr.setRequestHeader("Content-Type", 'application/json');
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.send(JSON.stringify(requestObj));
 }
 
 var svg;
@@ -169,16 +151,8 @@ function plot(data) {
     </script>
   </head>
   <body>
-    <h1>NuCompRes Chart Curves</h1>
-    <p>
-        The expression must return a <i>data</i> field with at least 2 columns. Columns 2 and higher 3 are plotted over column 1.
-        <a href="https://github.com/mbostock/d3">D3.js</a> renders the graph. Accepted Content Type for all requests:
-        <select id="AcceptContentType">
-            <option>application/json</option>
-            <option>multipart/form-data</option>
-        </select>
-    </p>
-    
+    <h1>NuCompRes Chart</h1>
+
     <fieldset>
         <legend>Evaluate MATLAB Expressions</legend>
         
