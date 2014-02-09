@@ -4,6 +4,7 @@
  *
  * Based on http://www.catonmat.net/http-proxy-in-nodejs/
  * TODO: Update according https://gist.github.com/e0ne/3156463
+ * TODO: Use https://github.com/nodejitsu/node-http-proxy, https://mazira.com/blog/introduction-load-balancing-nodejs/
  */
 
 var http = require('http');
