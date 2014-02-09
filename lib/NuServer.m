@@ -15,6 +15,7 @@ function server = NuServer(port, routingTable, config)
   if exist('OCTAVE_VERSION', 'builtin')
     serverObj = javaObject('JavaNuServerOctave', port);
     % Pass arrays as org.octave.Matrix to Java.
+    % TODO: Deprecated in Octave 3.8 
     java_convert_matrix(1);
     java_unsigned_conversion(0);
   else
