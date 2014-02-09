@@ -26,9 +26,9 @@ Please use git to retrieve a copy of the development branch, or
 
 # Requirements
 
-* Java Version 5 or higher. This implies MATLAB Releases 2006 and higher.
-* (Optional) MATLAB Compiler™ to build a Standalone Application
-
+* Tested with MATLAB 2012b (Linux, Microsoft Windows 7) and Octave 3.6.4 (Microsoft Windows 7).
+* Java Version 5 or higher.
+* (Optional) MATLAB Compiler™ to build a Standalone Application.
 
 # Usage
 
