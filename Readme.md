@@ -180,10 +180,19 @@ See [path-management-in-deployed-applications] why the -a option is needed.
 Upon successful compilation, start the server from the command line with 
 
     myServer 8080
-	
-# Alternatives
 
-This is yet to come.
+# Legal Notes
+
+Carefully read The MathWorks Software License Agreement, in particular Section 5.2.3. Deployment Addendum
+
+> Licensee’s Application may not provide scripting capability
+> similar to the capabilities of any of the Programs or provide
+> functionality or behavior similar to that of the MATLAB
+> command line.
+    
+Be specific in what resources you deploy, and only deploy Standalone Applications.
+Never ever deploy the sample eval-resource. It is for local development and debugging inside a session only,
+be it MATLAB or Octave. 
 
 # References
 * [path-management-in-deployed-applications]
