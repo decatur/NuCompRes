@@ -6,8 +6,6 @@ computational MATLAB® or Octave resources over HTTP.
 NuCompRes readily turns your MATLAB investment into a server, enabling clients to integrate using the REST
 architectural style.
 
-![client-server](http://decatur.de/nucompres/client-server.png)
-
 # Target
 
 Experienced MATLAB modelers who want to integrate their solution without having to learn about IT middleware.
@@ -45,15 +43,11 @@ With the server running on port 8080, open
 
     http://localhost:8080/docs/index.html
 
-in a web browser. From there you can explore the exposed sample resources:
-
-![client-server](http://decatur.de/nucompres/html-chart.png)
+in a web browser. From there you can explore the exposed sample resources.
 
 # Excel Client
 
 There is an Excel Client interacting with some of the resources.
-
-![client-server](http://decatur.de/nucompres/sheet-chart.png)
 
 # MATLAB Client
 You can communicate with a remote server from inside MATLAB.
