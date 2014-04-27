@@ -6,6 +6,8 @@ computational MATLAB® or Octave resources over HTTP.
 NuCompRes readily turns your MATLAB investment into a server, enabling clients to integrate using the REST
 architectural style.
 
+![client-server](images/client-server.png)
+
 # Target
 
 Experienced MATLAB modelers who want to integrate their solution without having to learn about IT middleware.
