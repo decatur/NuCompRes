@@ -1,0 +1,19 @@
+{
+    "type": "object",
+    "requiredFields": ["foo", "missingField"],
+    "properties": {
+        "foo": {
+            "type": "string"
+        },
+        "bar": {
+            "type": "number"
+        },
+        "foobar": {
+            "type": "boolean"
+        },
+        "defaultField": {
+            "type": "string",
+            "default": "defaultValue"
+        }
+    }
+}

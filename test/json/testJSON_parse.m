@@ -56,3 +56,6 @@ catch my_caught_error
 end
 
 oAct = JSON_parse(readFileToString('pass1.json', 'utf-8'));
+
+schema = JSON_parse(readFileToString( 'schema.json', 'utf8' ));
+JSON_parse('{"foo": "Hello World", "bar": 1}', [], schema)

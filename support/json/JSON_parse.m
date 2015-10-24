@@ -1,21 +1,21 @@
-function value = JSON_parse(json, reviver)
-%data=JSON_parse(string, reviver) parses a string as JSON, optionally
-% transforming the value produced by parsing.
+function value = JSON_parse(json, schema)
+%data=JSON_parse(string, schema) parses a string as JSON, optionally
+% validating against a JSON schema.
 %
 % https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
 % The JSON format and much more can be found at http://json.org.
 %
 % Arguments
 %   json: The text to parse as JSON.
-%   reviver: If a function, prescribes how the value originally produced
-%       by parsing is transformed, before being returned.
+%   schema: (Optional) A JSON schema struct.
 %
 % Returns
 %  value: The object corresponding to the given JSON text.
 %
 % Example:
 %   JSON_parse('[[[1,2],[3,4]],[[5,6],[7,8]]]')
-%   JSON_parse('{"foo":"Hello", "bar":1}', @(obj, key, value) class(value))
+%   schema = JSON_parse(readFileToString( 'schema.json', 'utf8' ))
+%   JSON_parse('{"foo":"Hello", "bar":1}', schema)
 %   JSON_parse(['[' repmat('[1, 2, 3],', 1, 100) '[3, false, null],[5,6, 7]]'])
 %   JSON_parse('[[1, 2, 3],[3, 4, null],[5,6, 7]]')
 %   JSON_parse('[3, 4, null]')
@@ -40,15 +40,18 @@ function value = JSON_parse(json, reviver)
 %     BSD, see LICENSE_BSD.txt files for details 
 %
 
-  global pos inStr len esc index_esc len_esc isoct arraytoken rev
+  global errors pos inStr len esc index_esc len_esc isoct arraytoken
 
   pos = 1; len = length(json); inStr = json;
-  if nargin >= 2 && strcmp(class(reviver), 'function_handle')
-    rev = reviver;
-  else
-    rev = [];
+  
+  context = struct();
+  context.path = '/';
+
+  if nargin >= 2 && strcmp(class(schema), 'struct')
+    context.schema = schema;
   end
   
+  errors = {};
   isoct = exist('OCTAVE_VERSION', 'builtin');
   arraytoken=find(inStr=='[' | inStr==']' | inStr=='"');
   jstr=regexprep(inStr,'\\\\','  ');
@@ -60,30 +63,81 @@ function value = JSON_parse(json, reviver)
   index_esc = 1; len_esc = length(esc);
 
   skip_whitespace();
-  value = parse_value();
+  value = parse_value(context);
   skip_whitespace();
   
   % End of text?
   if pos~=len+1
     error_pos('Unexpected char at position %d');
   end
+  
+  disp(errors);
 end
 
-function object = parse_object()
-  global rev
+function child = childContext(context, key)
+  child = struct();
+  child.path = [context.path key '/'];
+  if isfield(context, 'schema') && isfield(context.schema, 'type') && strcmp(context.schema.type, 'object') && isfield(context.schema, 'properties') && isfield(context.schema.properties, key)
+    child.schema = context.schema.properties.(key);
+  end
+end
+
+function validate(value, type, context)
+  if ~isfield(context, 'schema')
+    return
+  end
+  
+  global errors
+  
+  if isfield(context.schema, '_ref')
+    schema = JSON_parse(readFileToString( context.schema._href, 'utf8' ))
+  else
+    schema = context.schema
+  end
+  
+  if isfield(schema, 'allOf')
+    for i=1:length(schema.allOf)
+      validate(value, type, schema.allOf{i})
+    end
+  elseif ~strcmp(schema.type, type)
+    errors = [errors, {sprintf('At %s, expected %s, found %s %s', context.path, schema.type, type, value)}];
+  elseif strcmp(schema.type, 'object') && isfield(schema, 'requiredFields')
+    for i=1:length(schema.requiredFields)
+      if ~isfield(value, schema.requiredFields{i})
+        errors = [errors, {sprintf('At %s missing required field %s', context.path, schema.requiredFields{i})}];
+      end
+    end
+  end
+
+end
+
+function mergedObject = mergeDefaults(object, context)
+  mergedObject = object;
+  
+  if ~isfield(context, 'schema') || ~isfield(context.schema, 'properties')
+    return
+  end
+
+  properties = context.schema.properties;
+  propertyNames = fieldnames(properties);
+
+  for i=1:length(propertyNames)
+    property = properties.(propertyNames{i});
+    if isfield(property, 'default')
+      mergedObject.(propertyNames{i}) = property.default;
+    end
+  end
+end
+
+function object = parse_object(context)
   parse_char('{');
   object = struct();
   if next_char ~= '}'
       while 1
-          key = parseStr();
+          key = parseStr(struct());
           key = valid_field(key);
           parse_char(':');
-          object.(key) = parse_value();
-          
-          if ~isempty(rev)
-            object.(key) = rev(object, key, object.(key));
-          end
-          
+          object.(key) = parse_value(childContext(context, key));          
           if next_char == '}'
               break;
           end
@@ -91,14 +145,17 @@ function object = parse_object()
       end
   end
   parse_char('}');
+  validate(object, 'object', context);
+  object = mergeDefaults(object, context);
+  
 end
 
-function object = parse_array() % JSON array is written in row-major order
+function object = parse_array(context) % JSON array is written in row-major order
   global pos inStr
   
   lPos = pos;
   
-  if regexp(inStr(pos:end), '^(\s*[\s*){2}[^\[]')
+  if regexp(inStr(pos:end), '^(\s*\[\s*){2}[^\[]')
     try
       object = json2D2array();
       return;
@@ -109,7 +166,7 @@ function object = parse_array() % JSON array is written in row-major order
       end
       pos = lPos;
     end
-  elseif regexp(inStr(pos:end), '^\s*[\s*[^\[]')  
+  elseif regexp(inStr(pos:end), '^\s*\[\s*[^\[]')  
     try
       object = json1D2array();
       return;
@@ -127,7 +184,7 @@ function object = parse_array() % JSON array is written in row-major order
 
   if next_char ~= ']'
       while 1
-        val = parse_value();
+        val = parse_value(struct());
         object{end+1} = val;
         if next_char == ']'
             break;
@@ -143,7 +200,6 @@ function vec = json1D2array()
   global pos inStr
 
   s = inStr(pos:end); % '[1, 2, 3]...'
-
 
   p = '\s*(-?\d+(\.\d+)?(e(+|-)?\d+)?|null)\s*';
 
@@ -200,65 +256,65 @@ function mat = json2D2array()
   pos = pos + e;
 end
 
-function mat = json2array_() % JSON array is written in row-major order
-  level = 1;
-  dims = [1];
-  cDims = [0];
-  mat = [];
-  expectComma = false;
+% function mat = json2array_() % JSON array is written in row-major order
+  % level = 1;
+  % dims = [1];
+  % cDims = [0];
+  % mat = [];
+  % expectComma = false;
   
-  while 1
-    if next_char == ']'
-      parse_char(']');
-      if length(dims) >= level && (dims(level) && dims(level) ~= cDims(level))
-        error('JSON_parse:internal', 'Not a matrix');
-      end
-      dims(level) = cDims(level);
-      level = level - 1;
-      if level == 1
-        break;
-      end
-    elseif next_char == ','
-      parse_char(',');
-      expectComma = false;
-    else
-      if expectComma
-        % TODO: Parser should not continue after this.
-        error_pos('Comma expected at position %d');
-      end
-      cDims(level) = cDims(level) + 1;
-      if next_char == '['
-        level = level + 1;
-        cDims(level) = 0;
-        parse_char('[');
-      else
-        try
-          val = parse_number();
-        catch
-          if parse_null()
-            val = NaN;
-          else
-            error('JSON_parse:internal', 'Not a matrix');
-          end
-        end
-        mat(end+1) = val;
-        expectComma = true;
-      end
-    end
-  end
+  % while 1
+    % if next_char == ']'
+      % parse_char(']');
+      % if length(dims) >= level && (dims(level) && dims(level) ~= cDims(level))
+        % error('JSON_parse:internal', 'Not a matrix');
+      % end
+      % dims(level) = cDims(level);
+      % level = level - 1;
+      % if level == 1
+        % break;
+      % end
+    % elseif next_char == ','
+      % parse_char(',');
+      % expectComma = false;
+    % else
+      % if expectComma
+        TODO: Parser should not continue after this.
+        % error_pos('Comma expected at position %d');
+      % end
+      % cDims(level) = cDims(level) + 1;
+      % if next_char == '['
+        % level = level + 1;
+        % cDims(level) = 0;
+        % parse_char('[');
+      % else
+        % try
+          % val = parse_number();
+        % catch
+          % if parse_null()
+            % val = NaN;
+          % else
+            % error('JSON_parse:internal', 'Not a matrix');
+          % end
+        % end
+        % mat(end+1) = val;
+        % expectComma = true;
+      % end
+    % end
+  % end
   
-  if length(dims) > 2
-    % dims(1) is always 1
-    dims = dims(2:end);
-  end
-  mat = reshape(mat, dims);
+  % if length(dims) > 2
+    dims(1) is always 1
+    % dims = dims(2:end);
+  % end
+  % mat = reshape(mat, dims);
   
-  % See TODO in JSON_stringify.array2json()
-  if dims(1) > 1
-    mat = permute(mat, length(size(mat)):-1:1);
-  end
+  See TODO in JSON_stringify.array2json()
+  % if dims(1) > 1
+    % mat = permute(mat, length(size(mat)):-1:1);
+  % end
   
-end
+% end
 
 function parse_char(c)
   global pos inStr len
@@ -291,7 +347,7 @@ function skip_whitespace
   end
 end
 
-function str = parseStr()
+function str = parseStr(context)
   global pos inStr len  esc index_esc len_esc isoct
   assert(inStr(pos) == '"', 'Precondition for parseStr()');
   
@@ -326,6 +382,7 @@ function str = parseStr()
       case '"'
         pos = pos + 1;
         % assertInvalidChars(str);
+        validate(str, 'string', context);
         return;
       case '\'
         if pos+1 > len
@@ -363,7 +420,7 @@ function str = parseStr()
   error_pos('Expected closing quote at end of text');
 end
 
-function num = parse_number()
+function num = parse_number(context)
   global pos inStr len isoct
   
   horizon = 25;
@@ -390,6 +447,9 @@ function num = parse_number()
   end
   
   pos = pos + nextIndex - 1;
+  
+  validate(num, 'number', context);
+  
 end
 
 function isNull = parse_null()
@@ -402,37 +462,40 @@ function isNull = parse_null()
   end
 end
 
-function val = parse_value()
+function val = parse_value(context)
   global pos inStr len
 
   switch(inStr(pos))
       case '"'
-          val = parseStr();
+          val = parseStr(context);
           return;
       case '['
-          val = parse_array();
+          val = parse_array(context);
           return;
       case '{'
-          val = parse_object();
+          val = parse_object(context);
           return;
       case {'-','0','1','2','3','4','5','6','7','8','9'}
-          val = parse_number();
+          val = parse_number(context);
           return;
       case 't'
           if pos+3 <= len && strcmp(inStr(pos:pos+3), 'true')
               val = true;
               pos = pos + 4;
+              validate(val, 'boolean', context)
               return;
           end
       case 'f'
           if pos+4 <= len && strcmp(inStr(pos:pos+4), 'false')
               val = false;
               pos = pos + 5;
+              validate(val, 'boolean', context);
               return;
           end
       case 'n'
           if parse_null()
-            val = [];  
+            val = [];
+            validate(val, 'object', context);
             return;
           end
   end
@@ -461,8 +524,7 @@ function error_pos(msg, offset)
       post = '';
     end
     msg = [msg ': %s<error>%s'];
-
-error('JSONparser:invalidFormat', msg, index, pre, post);
+    error('JSONparser:invalidFormat', msg, index, pre, post);
   else
     error('JSONparser:invalidFormat', msg);
   end
