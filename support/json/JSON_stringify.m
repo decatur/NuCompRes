@@ -1,5 +1,5 @@
-function json=JSON_stringify(value, replacer, space)
-%json=JSON_stringify(value, replacer, space) converts an object to JSON
+function json=JSON_stringify(value, space, rootschema)
+%json=JSON_stringify(value, space) converts an object to JSON
 %   notation representing it.
 %
 % See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
@@ -7,10 +7,9 @@ function json=JSON_stringify(value, replacer, space)
 %
 % Arguments
 %   value: The value to convert to a JSON string.
-%   replacer: If a function, transforms values and properties encountered while
-%       stringifying; if an array, specifies the set of properties included in
-%       objects in the final string.
 %   space: Causes the resulting string to be pretty-printed.
+%   rootschema: (Optional) A JSON schema.
+
 %
 % Returns
 %   json: A string in the JSON format (see http://json.org)
@@ -18,11 +17,13 @@ function json=JSON_stringify(value, replacer, space)
 % Examples
 %   JSON_stringify(struct('foo', 'Hello', 'bar', 1))
 %   JSON_stringify(rand(10))
-%   JSON_stringify(struct('foo', 'Hello', 'password', 'keep_me_secret'), ...
-%                   @(obj, key, value) {value '#####'}{1+strcmp(key,'password')})
+%   JSON_stringify(struct('foo', 'Hello', 'password', 'keep_me_secret')
+%   
+%   schema = JSON_parse('{"type": "object", "properties": { "bar": { "type": "numeric", "format": "matrix" }}}');
+%   JSON_stringify(struct('bar', 1))
 %
 % Authors:
-%   Wolfgang Kuehn 2014-01-9
+%   Wolfgang Kuehn 2015-10-26
 %   Qianqian Fang 2011-09-09
 
 
@@ -45,11 +46,17 @@ function json=JSON_stringify(value, replacer, space)
 
   context.gap = '';
 
-  json = str([], value, context);
+  json = str([], value, context, rootschema);
 
 end
 
-function json = str(key, holder, context)
+function schema = childSchema(schema, key)
+  if isfield(schema, 'type') && strcmp(schema.type, 'object') && isfield(schema, 'properties') && isfield(schema.properties, key)
+    schema = context.schema.properties.(key);
+  end
+end
+
+function json = str(key, holder, context, schema)
 %  
   % key
   % holder
@@ -78,7 +85,19 @@ function json = str(key, holder, context)
       assert(false);
   end
 
-  if iscell(value)
+  if isfield(context, 'schema')
+    if strcmp(context.schema.type, 'string')
+      json = quote(value, context);
+    elseif strcmp(context.schema.type, 'numeric')
+      json = specialNumbers2NaN(num2str(complex2nan(value), '%.10g'));
+    elseif strcmp(context.schema.type, 'boolean')
+      json = mat2str(value);
+    elseif strcmp(context.schema.type, 'object')
+      json = struct2json(value, context, childSchema(schema, key));
+    elseif strcmp(context.schema.type, 'array')
+      json = array2json(value, context);
+    end
+  elseif iscell(value)
     json = cell2json(value, context);
   elseif ismatrix(value)
     if isempty(value)
@@ -104,16 +123,10 @@ function json = str(key, holder, context)
   else
     assert(false);
   end
-  
-  if isfield(context, 'replacer')
-    % TODO: Top level?
-    replacer = context.replacer;
-    json = replacer(holder, key, json);
-  end
 
 end
 
-function txt=struct2json(value, context)
+function txt = struct2json(value, context)
   assert(isstruct(value), 'input is not a struct');
     
   txt = sprintf('{%s', context.nl);
@@ -139,7 +152,7 @@ function txt=struct2json(value, context)
 end
 
 % This is a copy of struct2json with obvious modifications.
-function txt=cell2json(value, context)
+function txt = cell2json(value, context)
   assert(iscell(value), 'input is not a struct');
     
   txt = sprintf('[%s', context.nl);
@@ -223,14 +236,14 @@ function txt = array2json(value, context)
 
 end
 
-function txt=quote(value, context)
+function txt = quote(value, context)
   assert(ischar(value), 'input is not a string');
 
-  txt=strrep(value, '\', '\\');
-  txt=strrep(txt, '"', '\"');
-  txt=strrep(txt, sprintf('\n'), '\n');
-  txt=strrep(txt, sprintf('\r'), '\r');
-  txt=strrep(txt, sprintf('\t'), '\t');
+  txt = strrep(value, '\', '\\');
+  txt = strrep(txt, '"', '\"');
+  txt = strrep(txt, sprintf('\n'), '\n');
+  txt = strrep(txt, sprintf('\r'), '\r');
+  txt = strrep(txt, sprintf('\t'), '\t');
     
   txt = ['"', txt ,'"'];
 end
