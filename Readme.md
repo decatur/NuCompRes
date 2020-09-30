@@ -1,3 +1,5 @@
+⚠️ Deprecated. Please consider using MATLAB Production Server or move over to the Python eco system.
+
 # Overview
 
 NuCompRes (Numerical Computational Resources) is a lightweight component to expose
